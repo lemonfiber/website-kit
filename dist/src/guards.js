@@ -1,5 +1,5 @@
 /** The structural rules, as pure functions over a described tree. */
-import { without } from "./markup.js";
+import { without, withoutRuns } from "./markup.js";
 export const LINE_CAP = 550;
 /** The lint escape hatch, spelled so this file does not trip its own rule. */
 const SUPPRESSION = ["eslint", "disable"].join("-");
@@ -16,8 +16,11 @@ const at = (path, line, message) => ({
 /** The prose a reader sees in a chrome template, one chunk per text run. */
 export function chromeProse(source) {
     const template = source.replace(/^---[\s\S]*?\n---/, "");
-    const noComments = without(template, /<!--[\s\S]*?-->/g);
-    const noScripts = without(noComments, /<(style|script)[\s\S]*?<\/\1>/g);
+    const noComments = withoutRuns(template, [["<!--", "-->"]]);
+    const noScripts = withoutRuns(noComments, [
+        ["<style", "</style>"],
+        ["<script", "</script>"],
+    ]);
     const noExpressions = without(noScripts, /\{[^{}]*\}/g);
     const stripped = without(noExpressions, /<[^<>]*>/g, "\n");
     const found = [];

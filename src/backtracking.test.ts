@@ -7,6 +7,8 @@
 import { describe, expect, it } from "vitest";
 
 import { chromeProse } from "./guards.ts";
+import { chrome, examples } from "./links.ts";
+import { declaredIn } from "./tokens.ts";
 import { rewriteLinks, type Mirror, type Revision } from "./mirror.ts";
 
 const BUDGET_MS = 500;
@@ -52,5 +54,27 @@ describe("a parse of prose this repository does not own", () => {
 
   it("rewrites a run of unclosed destinations in step with its length", () => {
     expect(written("[](".repeat(LENGTH))).toBeLessThan(BUDGET_MS);
+  });
+
+  it("strips a run of unclosed comments and styles in step with its length", () => {
+    expect(took(() => chromeProse("<!--".repeat(LENGTH)))).toBeLessThan(
+      BUDGET_MS,
+    );
+    expect(took(() => chromeProse("<style".repeat(LENGTH)))).toBeLessThan(
+      BUDGET_MS,
+    );
+  });
+
+  it("reads a run of unclosed code examples in step with its length", () => {
+    const page = "<pre\t".repeat(LENGTH);
+
+    expect(took(() => examples(page))).toBeLessThan(BUDGET_MS);
+    expect(took(() => chrome(page))).toBeLessThan(BUDGET_MS);
+  });
+
+  it("reads a run of undeclared token names in step with its length", () => {
+    expect(
+      took(() => declaredIn(`:root{${"--lf-".repeat(LENGTH)}}`)),
+    ).toBeLessThan(BUDGET_MS);
   });
 });

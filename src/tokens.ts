@@ -30,8 +30,14 @@ export const INSTALLED = "node_modules/@lemonfiber/brand/tokens/tokens.css";
 /** The stylesheet held to them. */
 export const STYLESHEET = "src/app.css";
 
-/** One brand custom property being declared. */
-const DECLARATION = /(--lf-[a-z0-9-]+)\s*:\s*([^;]+)/g;
+/** What every brand custom property's name starts with. */
+const PREFIX = "--lf-";
+
+/** A character a custom property's name is spelled with. */
+const NAME_CHARACTER = /^[a-z0-9-]$/;
+
+/** A character that may stand between a name and its colon. */
+const SPACE = /^\s$/;
 
 /** One brand custom property being read, and whether a fallback follows it. */
 const READ = /var\(\s*(--lf-[a-z0-9-]+)\s*([,)])/g;
@@ -69,6 +75,48 @@ const listed = (names: Iterable<string>): string =>
 const lineAt = (text: string, index: number): number =>
   text.slice(0, index).split("\n").length;
 
+/**
+ * The brand token named right before `colon`, or null when none is: the run of
+ * name characters ending there, from the first `--lf-` in it on.
+ */
+function nameBefore(statement: string, colon: number): string | null {
+  let end = colon;
+  while (end > 0 && SPACE.test(statement.charAt(end - 1))) end--;
+  let start = end;
+  while (start > 0 && NAME_CHARACTER.test(statement.charAt(start - 1))) start--;
+  const run = statement.slice(start, end);
+  const prefix = run.indexOf(PREFIX);
+  return prefix === -1 || prefix + PREFIX.length === run.length
+    ? null
+    : run.slice(prefix);
+}
+
+/**
+ * Each brand token one rule's body declares, with its value: in every
+ * statement, the first colon a name stands before, and what follows it.
+ *
+ * Scanned rather than matched. A pattern for `--lf-name: value` restarts at
+ * every `--lf-` in a run of name characters no colon follows, which costs the
+ * square of the run's length. Here each colon is visited once, and the name
+ * read back from it covers characters no other colon reads.
+ */
+function declarations(body: string): (readonly [string, string])[] {
+  const found: (readonly [string, string])[] = [];
+  for (const statement of body.split(";")) {
+    let colon = statement.indexOf(":");
+    while (colon !== -1) {
+      const name = nameBefore(statement, colon);
+      const value = statement.slice(colon + 1);
+      if (name !== null && value !== "") {
+        found.push([name, value.trim()]);
+        break;
+      }
+      colon = statement.indexOf(":", colon + 1);
+    }
+  }
+  return found;
+}
+
 /** Every brand token a stylesheet declares, and where. */
 export function declaredIn(css: string): Declared {
   const values = new Map<string, string>();
@@ -82,9 +130,8 @@ export function declaredIn(css: string): Declared {
     const opened = block.indexOf("{");
     if (opened === -1) continue;
     const selector = block.slice(0, opened).trim();
-    for (const one of block.slice(opened + 1).matchAll(DECLARATION)) {
-      const name = captured(one, 1);
-      values.set(`${name} in ${selector}`, captured(one, 2).trim());
+    for (const [name, value] of declarations(block.slice(opened + 1))) {
+      values.set(`${name} in ${selector}`, value);
       names.add(name);
       if (selector.includes(ROOT)) always.add(name);
     }

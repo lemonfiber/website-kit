@@ -49,6 +49,23 @@ describe("declaredIn", () => {
     expect(found.values.get("--lf-color-ink in :root")).toBe("#17160F");
   });
 
+  it("reads past a colon in a comment to the declaration it stands before", () => {
+    const found = declaredIn(
+      ":root {\n  /* Colour — severity: beside a shape */\n  --lf-color-ok: #55701E;\n}",
+    );
+
+    expect(found.values.get("--lf-color-ok in :root")).toBe("#55701E");
+  });
+
+  it("names a token from its first prefix, and passes over what names none", () => {
+    const found = declaredIn(
+      ":root { x--lf-a : 1; --lf-: 2; color: red; :3; --lf-b:; --lf-c: ; }",
+    );
+
+    expect([...found.names]).toEqual(["--lf-a", "--lf-c"]);
+    expect(found.values.get("--lf-c in :root")).toBe("");
+  });
+
   it("finds nothing in a stylesheet declaring no brand token", () => {
     expect(declaredIn("body { color: red; }").names.size).toBe(0);
   });

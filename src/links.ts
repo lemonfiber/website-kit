@@ -14,7 +14,7 @@
  * `run/links.ts`.
  */
 
-import { without } from "./markup.ts";
+import { cut, runs, without, type Delimiters } from "./markup.ts";
 
 /** A repository this build rendered from, and the paths its revision holds. */
 export interface Checkout {
@@ -54,7 +54,10 @@ export interface Fault {
   readonly why: string;
 }
 
-const PRE = /<pre[\s>][\s\S]*?<\/pre>/g;
+/** A code example: `<pre>` or `<pre class=…>`, up to its closing tag. */
+const PRE: Delimiters = ["<pre", "</pre>"];
+const PRE_OPENS = /^[\s>]$/;
+const preOpens = (after: string): boolean => PRE_OPENS.test(after);
 const TAG = /<[^<>]*>/g;
 const ATTRIBUTE = /\s(?:href|src|srcset)="([^"]*)"/g;
 const PINNED = /^[0-9a-f]{40}$/;
@@ -92,17 +95,14 @@ export function decoded(text: string): string {
 
 /** The text of each rendered code example, with its markup taken out. */
 export function examples(html: string): string[] {
-  const found: string[] = [];
-  html.replace(PRE, (block: string): string => {
-    found.push(decoded(without(block, TAG)));
-    return "";
-  });
-  return found;
+  return runs(html, [PRE], preOpens).map(({ start, end }) =>
+    decoded(without(html.slice(start, end), TAG)),
+  );
 }
 
 /** The page without its code examples: the markup that carries real links. */
 export function chrome(html: string): string {
-  return html.replace(PRE, "");
+  return cut(html, runs(html, [PRE], preOpens));
 }
 
 /** Every `href`, `src` and `srcset` value in the markup. */

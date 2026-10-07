@@ -13,8 +13,11 @@
  * checkouts. Walking `dist/` and asking git what each checkout holds is
  * `run/links.ts`.
  */
-import { without } from "./markup.js";
-const PRE = /<pre[\s>][\s\S]*?<\/pre>/g;
+import { cut, runs, without } from "./markup.js";
+/** A code example: `<pre>` or `<pre class=…>`, up to its closing tag. */
+const PRE = ["<pre", "</pre>"];
+const PRE_OPENS = /^[\s>]$/;
+const preOpens = (after) => PRE_OPENS.test(after);
 const TAG = /<[^<>]*>/g;
 const ATTRIBUTE = /\s(?:href|src|srcset)="([^"]*)"/g;
 const PINNED = /^[0-9a-f]{40}$/;
@@ -49,16 +52,11 @@ export function decoded(text) {
 }
 /** The text of each rendered code example, with its markup taken out. */
 export function examples(html) {
-    const found = [];
-    html.replace(PRE, (block) => {
-        found.push(decoded(without(block, TAG)));
-        return "";
-    });
-    return found;
+    return runs(html, [PRE], preOpens).map(({ start, end }) => decoded(without(html.slice(start, end), TAG)));
 }
 /** The page without its code examples: the markup that carries real links. */
 export function chrome(html) {
-    return html.replace(PRE, "");
+    return cut(html, runs(html, [PRE], preOpens));
 }
 /** Every `href`, `src` and `srcset` value in the markup. */
 export function attributes(html) {
