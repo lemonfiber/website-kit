@@ -1,3 +1,10 @@
+/**
+ * Where the site's Playwright config reads the origin to sweep, as its
+ * `baseURL`. The port is free when chosen rather than fixed, because a fixed
+ * one may already answer with another checkout's preview, which would be swept
+ * in this site's place and pass or fail on pages this site does not serve.
+ */
+export declare const ORIGIN_VARIABLE = "LEMONFIBER_A11Y_ORIGIN";
 export interface A11yOptions {
     /** The site's checkout, holding the built site and its Playwright suite. */
     readonly root: string;

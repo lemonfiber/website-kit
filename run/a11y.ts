@@ -1,5 +1,28 @@
 /** Serves the built site, sweeps it with axe, and stops the server. */
 import { spawn, spawnSync } from "node:child_process";
+import { createServer } from "node:net";
+
+/**
+ * Where the site's Playwright config reads the origin to sweep, as its
+ * `baseURL`. The port is free when chosen rather than fixed, because a fixed
+ * one may already answer with another checkout's preview, which would be swept
+ * in this site's place and pass or fail on pages this site does not serve.
+ */
+export const ORIGIN_VARIABLE = "LEMONFIBER_A11Y_ORIGIN";
+
+/** A port nothing on this machine listens on now. */
+const freePort = (): Promise<number> =>
+  new Promise((resolve, reject) => {
+    const probe = createServer();
+    probe.once("error", reject);
+    probe.listen(0, "127.0.0.1", () => {
+      const address = probe.address();
+      const port = typeof address === "object" && address ? address.port : 0;
+      probe.close(() => {
+        resolve(port);
+      });
+    });
+  });
 
 export interface A11yOptions {
   /** The site's checkout, holding the built site and its Playwright suite. */
@@ -11,7 +34,8 @@ export async function runA11y(options: A11yOptions): Promise<never> {
   const ROOT = options.root.endsWith("/") ? options.root : `${options.root}/`;
 
   const BIN = `${ROOT}node_modules/.bin/`;
-  const ORIGIN = "http://127.0.0.1:4321/";
+  const PORT = await freePort();
+  const ORIGIN = `http://127.0.0.1:${String(PORT)}/`;
 
   const reachable = async (): Promise<boolean> => {
     try {
@@ -26,7 +50,7 @@ export async function runA11y(options: A11yOptions): Promise<never> {
   // others, so the server is started without waiting on it and stopped both ways.
   const server = spawn(
     `${BIN}astro`,
-    ["preview", "--port", "4321", "--host", "127.0.0.1"],
+    ["preview", "--port", String(PORT), "--host", "127.0.0.1"],
     { cwd: ROOT, stdio: "inherit", detached: false },
   );
 
@@ -58,8 +82,11 @@ export async function runA11y(options: A11yOptions): Promise<never> {
   let status = 1;
   if (up)
     status =
-      spawnSync(`${BIN}playwright`, ["test"], { cwd: ROOT, stdio: "inherit" })
-        .status ?? 1;
+      spawnSync(`${BIN}playwright`, ["test"], {
+        cwd: ROOT,
+        stdio: "inherit",
+        env: { ...process.env, [ORIGIN_VARIABLE]: ORIGIN },
+      }).status ?? 1;
   else console.error("a11y: the preview server never answered");
 
   stop();
