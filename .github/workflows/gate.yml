@@ -1,0 +1,37 @@
+# This repository's own gate: format, lint, types, 100% coverage, and a
+# committed dist/ that is what the source builds. Everything it runs is a
+# script `npm run ci` also runs locally, so a red pipeline is reproducible on a
+# laptop.
+name: gate
+
+on: [pull_request]
+
+permissions:
+  contents: read
+
+# A pull request pushed again cancels the run on its old head, which nobody
+# will read and which holds runners the org shares (Q-R75). Every other event
+# is grouped by its own run, so it is never cancelled and never cancels.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  gate:
+    name: gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install exactly what the lockfile says
+        run: npm ci --ignore-scripts
+
+      - name: Run the gate
+        run: npm run ci
