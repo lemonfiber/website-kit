@@ -40,6 +40,16 @@ await runGuards({ root: new URL("..", import.meta.url).pathname });
 
 and passes `checks` where it keeps rules of its own.
 
+`run/a11y` serves the built site on a free port and runs the site's Playwright
+suite against it, so the site's `playwright.config.ts` takes its `baseURL` from
+the variable `ORIGIN_VARIABLE` names:
+
+```ts
+import { ORIGIN_VARIABLE } from "@lemonfiber/website-kit/run/a11y";
+
+const origin = process.env[ORIGIN_VARIABLE];
+```
+
 ## Working here
 
 ```sh
