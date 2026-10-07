@@ -16,7 +16,7 @@ describe("without", () => {
   });
 
   it("takes out a comment the first pass spelled", () => {
-    expect(without("<!<!-- -->-- -->text", /<!--[\s\S]*?-->/g)).toBe("text");
+    expect(without("<!<!-- -->-- -->text", /<!--[^-]*-->/g)).toBe("text");
   });
 
   it("puts the replacement in each time", () => {

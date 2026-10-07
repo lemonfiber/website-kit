@@ -5,7 +5,9 @@
 # `main` requires has passed, and the reusable reads this list back out of this
 # file to know what it must see finish first, so a workflow missing from it is
 # one the gate never waits for. The required checks come from `ci` (the shared
-# gates) and `gate` (this repository's own).
+# gates), `gate` (this repository's own) and `sonar` (the scan, and the shared
+# SonarCloud issue gate it calls, `gate / gate` — a different check from
+# `gate`).
 name: awaiting-maintainer
 on:
   workflow_run:
@@ -16,7 +18,7 @@ on:
     # mergeable — the flag never goes up and nothing says why. Naming it costs one
     # more evaluation and means the list is already right on the day it is
     # required.
-    workflows: [ci, gate, codeql]
+    workflows: [ci, gate, sonar, codeql]
     types: [completed]
   pull_request_review:
     types: [submitted]
