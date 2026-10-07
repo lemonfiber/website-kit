@@ -46,6 +46,17 @@ export async function runA11y(options: A11yOptions): Promise<never> {
     }
   };
 
+  const stopDaemon = (): void => {
+    spawnSync(`${BIN}astro`, ["preview", "stop"], {
+      cwd: ROOT,
+      stdio: "inherit",
+    });
+  };
+
+  // A daemon an interrupted sweep left running answers a new `astro preview`
+  // with its own port rather than the one asked for, so it goes first.
+  stopDaemon();
+
   // `astro preview` daemonises on some platforms and stays in the foreground on
   // others, so the server is started without waiting on it and stopped both ways.
   const server = spawn(
@@ -56,10 +67,7 @@ export async function runA11y(options: A11yOptions): Promise<never> {
 
   const stop = (): void => {
     server.kill("SIGTERM");
-    spawnSync(`${BIN}astro`, ["preview", "stop"], {
-      cwd: ROOT,
-      stdio: "inherit",
-    });
+    stopDaemon();
   };
 
   /** How many times the server is asked before it is taken as never coming up. */
