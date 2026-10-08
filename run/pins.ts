@@ -18,6 +18,7 @@ import {
   WINDOW_HOURS,
   WINDOW_SECONDS,
   type Behind,
+  type Watched,
 } from "../src/pins.ts";
 
 export interface PinOptions {
@@ -30,10 +31,34 @@ export interface PinOptions {
   readonly guarded: readonly string[];
 }
 
-/** Fetch the pinned repositories and refuse a pin left behind past its window. */
-export function runPins(options: PinOptions): never {
-  const ROOT = options.root.endsWith("/") ? options.root : `${options.root}/`;
+/** Where a run's account goes: the log, and the run page's summary above it. */
+interface Account {
+  readonly say: (line?: string) => void;
+  readonly fenced: (lines: readonly string[]) => void;
+  /** A red this check could not compose a finding for. */
+  readonly stopped: (heading: string, detail: string) => never;
+}
 
+/** One git command's outcome. */
+interface Ran {
+  readonly ok: boolean;
+  readonly out: string;
+}
+
+type Git = (...args: string[]) => Ran;
+
+/** What comparing the watched paths with their branches found. */
+interface Comparison {
+  readonly behind: Behind[];
+  readonly unreadable: string[];
+  /** The modules fetched, each once. */
+  readonly fetched: Set<string>;
+}
+
+const hours = String(WINDOW_HOURS);
+
+/** An account written to the log and, on a runner, to the step summary. */
+function account(): Account {
   // What the run page shows above the log, so the verdict and what it asks of
   // the reader are read together.
   const SUMMARY = process.env["GITHUB_STEP_SUMMARY"];
@@ -49,14 +74,10 @@ export function runPins(options: PinOptions): never {
     say("```");
   };
 
-  /**
-   * A red this check could not compose a finding for.
-   *
-   * It never reached a comparison, so it has nothing to say about any pin, and a
-   * comparison that did not happen is not a clean one: it refuses rather than
-   * passes over what it could not read.
-   */
-  function stopped(heading: string, detail: string): never {
+  // It never reached a comparison, so it has nothing to say about any pin, and
+  // a comparison that did not happen is not a clean one: it refuses rather than
+  // passes over what it could not read.
+  const stopped = (heading: string, detail: string): never => {
     say(`## ${heading}`);
     say();
     say(
@@ -67,16 +88,22 @@ export function runPins(options: PinOptions): never {
     fenced([detail]);
     console.error(`::error::${detail}`);
     process.exit(1);
-  }
+  };
 
-  const hours = String(WINDOW_HOURS);
+  return { say, fenced, stopped };
+}
 
-  // A command named on its own is whichever one `PATH` reaches first, and `PATH`
-  // on a runner is what the steps before this one prepended to it. Both ends are
-  // closed here: the binary is named by absolute path, so nothing on `PATH` can
-  // stand in for it, and `PATH` is then pinned to the system directories, so
-  // nothing git resolves for itself can be substituted either. These are the
-  // three places a package manager installs git.
+/**
+ * Git, by absolute path and with `PATH` pinned to the system directories.
+ *
+ * A command named on its own is whichever one `PATH` reaches first, and `PATH`
+ * on a runner is what the steps before this one prepended to it. Both ends are
+ * closed here: the binary is named by absolute path, so nothing on `PATH` can
+ * stand in for it, and `PATH` is then pinned, so nothing git resolves for itself
+ * can be substituted either. These are the three places a package manager
+ * installs git.
+ */
+function gitAt(root: string, told: Account): Git {
   const CANDIDATES = [
     "/usr/bin/git",
     "/usr/local/bin/git",
@@ -86,77 +113,43 @@ export function runPins(options: PinOptions): never {
 
   const GIT = CANDIDATES.find((path) => existsSync(path));
   if (GIT === undefined)
-    stopped("Git could not be found", `no git at ${CANDIDATES.join(", ")}`);
+    told.stopped(
+      "Git could not be found",
+      `no git at ${CANDIDATES.join(", ")}`,
+    );
 
-  const git = (...args: string[]): { ok: boolean; out: string } => {
+  return (...args: string[]): Ran => {
     const done = spawnSync(GIT, args, {
-      cwd: ROOT,
+      cwd: root,
       encoding: "utf8",
       maxBuffer: 1 << 26,
       env: { ...process.env, PATH: SYSTEM_PATH },
     });
     return { ok: done.status === 0, out: done.stdout.trim() };
   };
+}
 
-  const status = git("submodule", "status");
-  if (!status.ok)
-    stopped("The submodules could not be read", "git submodule status failed");
-
-  const pinned = pinnedRevisions(status.out);
-  const branches = declaredBranches(
-    git("config", "-f", ".gitmodules", "--get-regexp", String.raw`^submodule\.`)
-      .out,
-  );
-  // The guards' own sources, and every tree a mirror renders. The second list is
-  // most of this site: a mirrored page is the upstream file, so no guard names it
-  // and the guarded paths alone know nothing about any of them.
-  const mirrors = readFileSync(`${ROOT}mirrors.json`, "utf8");
-  const everything = watched(
-    [...options.guarded, ...mirrored(mirrors)],
-    [...pinned.keys()],
-  );
-
-  // A pull request names the commit it targets. One that moves a pin is a
-  // catch-up, and is judged on the modules it moves rather than refused for a
-  // pin it does not touch.
-  const BASE = process.env["BASE_SHA"] ?? "";
-  const pinsAt = (revision: string): Map<string, string> => {
-    const listed = git("ls-tree", revision, "--", "vendor/");
-    if (!listed.ok)
-      stopped(
-        "The pins could not be read",
-        `${revision} is not in the checkout`,
-      );
-    return pinnedIn(listed.out);
-  };
-  const moving = BASE === "" ? [] : moved(pinsAt(BASE), pinsAt("HEAD"));
-  const reads =
-    moving.length === 0
-      ? everything
-      : everything.filter((one) => moving.includes(one.module));
-
-  // A guard whose source resolves to no pinned repository is a guard this check
-  // is not watching, and an empty list would read as a clean run.
-  if (everything.length === 0)
-    stopped(
-      "No guarded source sits in a pinned repository",
-      "every guarded path resolved outside vendor/, so nothing was compared",
-    );
-
-  const behind: Behind[] = [];
-  const unreadable: string[] = [];
-  const fetched = new Set<string>();
+/**
+ * Every watched path's commits its pin has not taken. A fetch that failed
+ * leaves a remote-tracking ref that is itself behind, and the comparison would
+ * come back clean off it, so it is named rather than compared.
+ */
+function compare(
+  git: Git,
+  reads: readonly Watched[],
+  pinned: ReadonlyMap<string, string>,
+  branches: ReadonlyMap<string, string>,
+): Comparison {
+  const found: Comparison = { behind: [], unreadable: [], fetched: new Set() };
 
   for (const read of reads) {
     const pin = pinned.get(read.module) ?? "";
     const branch = branches.get(read.module) ?? DEFAULT_BRANCH;
 
-    // A fetch that failed leaves a remote-tracking ref that is itself behind, and
-    // the comparison would come back clean off it.
-    if (!fetched.has(read.module)) {
-      fetched.add(read.module);
+    if (!found.fetched.has(read.module)) {
+      found.fetched.add(read.module);
       if (!git("-C", read.module, "fetch", "--quiet", "origin").ok)
-        unreadable.push(`${read.module}: origin could not be fetched`);
+        found.unreadable.push(`${read.module}: origin could not be fetched`);
     }
 
     const range = `${pin}..origin/${branch}`;
@@ -165,22 +158,24 @@ export function runPins(options: PinOptions): never {
 
     const log = git(...args);
     if (!log.ok) {
-      unreadable.push(`${read.module}: ${range} could not be read`);
+      found.unreadable.push(`${read.module}: ${range} could not be read`);
       continue;
     }
 
     const commits = parseCommits(log.out);
     if (commits.length > 0)
-      behind.push({ ...read, pin: pin.slice(0, 7), commits });
+      found.behind.push({ ...read, pin: pin.slice(0, 7), commits });
   }
+  return found;
+}
 
-  const blind = unread(
-    [...options.guarded, ...mirrored(mirrors)],
-    [...pinned.keys()],
-  );
-  const late = overdue(behind, Math.floor(Date.now() / 1000), WINDOW_SECONDS);
-  const scanned = `${String(reads.length)} watched paths, in ${String(fetched.size)} of ${String(pinned.size)} pinned repositories.`;
-
+/** The verdict's heading and the paragraph under it. */
+function headline(
+  told: Account,
+  late: readonly Behind[],
+  found: Comparison,
+): void {
+  const { say } = told;
   if (late.length > 0) {
     say("## A pin has gone behind on a source this site renders");
     say();
@@ -190,14 +185,14 @@ export function runPins(options: PinOptions): never {
       "longer than `bump-pins` takes to carry them. Until each is taken, this",
     );
     say("check refuses every pull request here (Q-R68).");
-  } else if (unreadable.length > 0) {
+  } else if (found.unreadable.length > 0) {
     say("## A pinned repository could not be compared with its default branch");
     say();
     say(
       "This is not a pin that has gone behind: the comparison did not happen,",
     );
     say("so what that pin has taken is unknown rather than current.");
-  } else if (behind.length > 0) {
+  } else if (found.behind.length > 0) {
     say("## Every commit a pin has not taken is inside the window");
     say();
     say(
@@ -211,7 +206,16 @@ export function runPins(options: PinOptions): never {
       "## Every pin has taken every commit touching a source this site renders",
     );
   }
+}
 
+/** What the run read, and what it says nothing about. */
+function scope(
+  told: Account,
+  scanned: string,
+  moving: readonly string[],
+  blind: readonly string[],
+): void {
+  const { say, fenced } = told;
   say();
   say(scanned);
   if (moving.length > 0) {
@@ -223,10 +227,9 @@ export function runPins(options: PinOptions): never {
     fenced(moving);
   }
 
-  // What a clean run does not say. These repositories hold no path a page or a
-  // guard here reads, so no commit in them can ever appear above — the verdict
-  // is about the ones that are read, and without this it reads as an account of
-  // all of them.
+  // These repositories hold no path a page or a guard here reads, so no commit
+  // in them can ever appear above — the verdict is about the ones that are
+  // read, and without this it reads as an account of all of them.
   if (blind.length > 0) {
     say();
     say("No page or guard here reads a path inside these, so this check says");
@@ -234,7 +237,15 @@ export function runPins(options: PinOptions): never {
     say();
     fenced(blind);
   }
+}
 
+/** The commits behind, and how to take the ones past the window. */
+function findings(
+  told: Account,
+  late: readonly Behind[],
+  found: Comparison,
+): void {
+  const { say, fenced } = told;
   if (late.length > 0) {
     say();
     say(`Waiting longer than ${hours} hours:`);
@@ -255,22 +266,88 @@ export function runPins(options: PinOptions): never {
     console.error(
       `::error::a pin has not taken commits that have waited longer than ${hours} hours on a source this site renders — merge the pins/all pull request, or take the pin with \`git submodule update --remote <module>\` and \`npm run guard -- --fix\``,
     );
-  } else if (behind.length > 0) {
+  } else if (found.behind.length > 0) {
     say();
     say("Inside the window:");
     say();
-    fenced(report(behind).split("\n"));
+    fenced(report(found.behind).split("\n"));
   }
 
-  if (unreadable.length > 0) {
+  if (found.unreadable.length > 0) {
     say();
     say("Could not be compared:");
     say();
-    fenced(unreadable);
+    fenced(found.unreadable);
     console.error(
       "::error::a pinned repository could not be compared with its default branch, so what it holds is unknown rather than current",
     );
   }
+}
 
-  process.exit(late.length + unreadable.length === 0 ? 0 : 1);
+/** Fetch the pinned repositories and refuse a pin left behind past its window. */
+export function runPins(options: PinOptions): never {
+  const ROOT = options.root.endsWith("/") ? options.root : `${options.root}/`;
+  const told = account();
+  const git = gitAt(ROOT, told);
+
+  const status = git("submodule", "status");
+  if (!status.ok)
+    told.stopped(
+      "The submodules could not be read",
+      "git submodule status failed",
+    );
+
+  const pinned = pinnedRevisions(status.out);
+  const branches = declaredBranches(
+    git("config", "-f", ".gitmodules", "--get-regexp", String.raw`^submodule\.`)
+      .out,
+  );
+  // The guards' own sources, and every tree a mirror renders. The second list is
+  // most of this site: a mirrored page is the upstream file, so no guard names it
+  // and the guarded paths alone know nothing about any of them.
+  const mirrors = readFileSync(`${ROOT}mirrors.json`, "utf8");
+  const paths = [...options.guarded, ...mirrored(mirrors)];
+  const everything = watched(paths, [...pinned.keys()]);
+
+  // A pull request names the commit it targets. One that moves a pin is a
+  // catch-up, and is judged on the modules it moves rather than refused for a
+  // pin it does not touch.
+  const BASE = process.env["BASE_SHA"] ?? "";
+  const pinsAt = (revision: string): Map<string, string> => {
+    const listed = git("ls-tree", revision, "--", "vendor/");
+    if (!listed.ok)
+      told.stopped(
+        "The pins could not be read",
+        `${revision} is not in the checkout`,
+      );
+    return pinnedIn(listed.out);
+  };
+  const moving = BASE === "" ? [] : moved(pinsAt(BASE), pinsAt("HEAD"));
+  const reads =
+    moving.length === 0
+      ? everything
+      : everything.filter((one) => moving.includes(one.module));
+
+  // A guard whose source resolves to no pinned repository is a guard this check
+  // is not watching, and an empty list would read as a clean run.
+  if (everything.length === 0)
+    told.stopped(
+      "No guarded source sits in a pinned repository",
+      "every guarded path resolved outside vendor/, so nothing was compared",
+    );
+
+  const found = compare(git, reads, pinned, branches);
+  const blind = unread(paths, [...pinned.keys()]);
+  const late = overdue(
+    found.behind,
+    Math.floor(Date.now() / 1000),
+    WINDOW_SECONDS,
+  );
+  const scanned = `${String(reads.length)} watched paths, in ${String(found.fetched.size)} of ${String(pinned.size)} pinned repositories.`;
+
+  headline(told, late, found);
+  scope(told, scanned, moving, blind);
+  findings(told, late, found);
+
+  process.exit(late.length + found.unreadable.length === 0 ? 0 : 1);
 }
