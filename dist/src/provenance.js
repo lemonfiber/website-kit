@@ -50,5 +50,5 @@ export function provenanceIndex(entries, own) {
             };
         return [routeOfEntry(entry.id), origin];
     });
-    return Object.fromEntries(index.sort(([a], [b]) => (a < b ? -1 : 1)));
+    return Object.fromEntries(index.toSorted(([a], [b]) => (a < b ? -1 : 1)));
 }
