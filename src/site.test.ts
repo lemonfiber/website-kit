@@ -54,6 +54,7 @@ const clean = (): Record<string, string> => ({
   "src/paraglide/messages.js": "generated, and not held to any rule",
   "vendor/repo/docs/a.md": "# A\n",
   "vendor/org/CODE_OF_CONDUCT.md": "# Conduct\n",
+  ".gitmodules": '[submodule "vendor/org"]\n\tpath = vendor/org\n',
   [TOKENS]: BRAND,
   [INSTALLED]: BRAND,
   [STYLESHEET]: ":root { --ink: var(--lf-color-ink); }\n",
@@ -116,6 +117,31 @@ describe("readTree", () => {
     expect(found.map((one) => one.message)).toEqual([
       "TypeScript escape hatch",
       "slug collides with the org mirror — one home per fact",
+    ]);
+  });
+
+  it("holds a site that pins no org to none of the org's rules", async () => {
+    const files = clean();
+    files[".gitmodules"] = '[submodule "vendor/repo"]\n\tpath = vendor/repo\n';
+    files["mirrors.json"] = JSON.stringify({
+      mirrors: [{ route: "things", repo: "repo", path: "docs" }],
+    });
+    const { found } = await readTree(
+      site(files, { [`${CONTENT}/things`]: "../../../vendor/repo/docs" }),
+    );
+    expect(found).toEqual([]);
+  });
+
+  it("holds a site that pins the org to rendering what it publishes", async () => {
+    const files = clean();
+    files["mirrors.json"] = JSON.stringify({
+      mirrors: [{ route: "things", repo: "repo", path: "docs" }],
+    });
+    const { found } = await readTree(
+      site(files, { [`${CONTENT}/things`]: "../../../vendor/repo/docs" }),
+    );
+    expect(found.map((one) => one.message)).toEqual([
+      "no mirror renders anything from the org — a rename left this watching nothing",
     ]);
   });
 
