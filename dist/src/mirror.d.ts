@@ -122,6 +122,8 @@ export declare function crossRoute(url: string, cross: ReadonlyMap<string, strin
 export declare function editUrl(mirror: Mirror, relative: string): string;
 /** Where a reader sees exactly the bytes that were rendered. */
 export declare function sourceUrl(mirror: Mirror, revision: Revision, relative: string): string;
+/** Where a page's source sits in the repository that owns it. */
+export declare function upstreamPath(mirror: Mirror, relative: string): string;
 /** `2026-08-23T04:20:11+02:00` as `2026-08-23`. */
 export declare function dayOf(iso: string): string;
 /** The seven leading characters git itself would show. */

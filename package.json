@@ -32,6 +32,10 @@
       "types": "./dist/src/links.d.ts",
       "default": "./dist/src/links.js"
     },
+    "./llms": {
+      "types": "./dist/src/llms.d.ts",
+      "default": "./dist/src/llms.js"
+    },
     "./lockfile": {
       "types": "./dist/src/lockfile.d.ts",
       "default": "./dist/src/lockfile.js"
@@ -55,6 +59,10 @@
     "./pins": {
       "types": "./dist/src/pins.d.ts",
       "default": "./dist/src/pins.js"
+    },
+    "./provenance": {
+      "types": "./dist/src/provenance.d.ts",
+      "default": "./dist/src/provenance.js"
     },
     "./site": {
       "types": "./dist/src/site.d.ts",

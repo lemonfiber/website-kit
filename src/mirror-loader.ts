@@ -13,6 +13,7 @@
 import { pathToFileURL } from "node:url";
 
 import type { Loader, LoaderContext } from "astro/loaders";
+import { z } from "astro/zod";
 
 import {
   attributedPath,
@@ -26,6 +27,7 @@ import {
   routeTable,
   sourceUrl,
   titleOf,
+  upstreamPath,
   withoutLeadingHeading,
   type Mirror,
   type Revision,
@@ -36,10 +38,30 @@ import { gitLog, listing, read } from "./mirror-source.ts";
 export interface Provenance {
   readonly repo: string;
   readonly label: string;
+  /** The repository that owns the page, as its address on the forge. */
+  readonly remote: string;
+  /** Where the page's source sits in that repository. */
+  readonly path: string;
   readonly revision: string;
   readonly date: string;
   readonly source: string;
 }
+
+/**
+ * The schema a site's content collection declares `mirror` with, so that a field
+ * the loader stamps is one the collection keeps rather than strips.
+ */
+export const provenanceSchema = z
+  .object({
+    repo: z.string(),
+    label: z.string(),
+    remote: z.string(),
+    path: z.string(),
+    revision: z.string(),
+    date: z.string(),
+    source: z.string(),
+  })
+  .optional();
 
 /** One mirror, resolved against the checkout. */
 export interface Reading {
@@ -139,6 +161,8 @@ export async function entriesOf(
       const provenance: Provenance = {
         repo: mirror.repo,
         label: mirror.label,
+        remote: mirror.remote,
+        path: upstreamPath(mirror, relative),
         revision: revision.sha,
         date: revision.date,
         source: sourceUrl(mirror, revision, relative),

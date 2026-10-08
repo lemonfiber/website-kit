@@ -18,17 +18,19 @@ Nothing is published to a registry.
 
 ## What it holds
 
-| Import                                        | What it is                                                                    |
-| --------------------------------------------- | ----------------------------------------------------------------------------- |
-| `@lemonfiber/website-kit/mirror`              | Routes, titles, link rewriting and provenance for a mirrored page             |
-| `@lemonfiber/website-kit/mirror-loader`       | The Astro content loader that puts mirrored pages into a Starlight collection |
-| `@lemonfiber/website-kit/guards`              | The rules on a site's own code and chrome, and on its mirror routes           |
-| `@lemonfiber/website-kit/site`                | A site read the way the guards read it, and every rule the kit holds it to    |
-| `@lemonfiber/website-kit/health`              | The org's community health files against the pages a site renders             |
-| `@lemonfiber/website-kit/tokens`, `/lockfile` | The installed brand package against the brand submodule and the lockfile      |
-| `@lemonfiber/website-kit/links`               | The addresses a built site sends a reader to, into the repositories it pins   |
-| `@lemonfiber/website-kit/pins`, `/bump`       | How far each pin is behind, and the pull request that takes them              |
-| `@lemonfiber/website-kit/run/*`               | The runners a site's scripts call: `guards`, `links`, `pins`, `bump`, `a11y`  |
+| Import                                        | What it is                                                                                                                             |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| `@lemonfiber/website-kit/mirror`              | Routes, titles, link rewriting and provenance for a mirrored page                                                                      |
+| `@lemonfiber/website-kit/mirror-loader`       | The Astro content loader that puts mirrored pages into a Starlight collection, and the schema a collection keeps their provenance with |
+| `@lemonfiber/website-kit/provenance`          | Every route a site renders against the repository, path and revision it came from                                                      |
+| `@lemonfiber/website-kit/llms`                | A site's `llms.txt` and `llms-full.txt`, from its pages' frontmatter                                                                   |
+| `@lemonfiber/website-kit/guards`              | The rules on a site's own code and chrome, and on its mirror routes                                                                    |
+| `@lemonfiber/website-kit/site`                | A site read the way the guards read it, and every rule the kit holds it to                                                             |
+| `@lemonfiber/website-kit/health`              | The org's community health files against the pages a site renders                                                                      |
+| `@lemonfiber/website-kit/tokens`, `/lockfile` | The installed brand package against the brand submodule and the lockfile                                                               |
+| `@lemonfiber/website-kit/links`               | The addresses a built site sends a reader to, into the repositories it pins                                                            |
+| `@lemonfiber/website-kit/pins`, `/bump`       | How far each pin is behind, and the pull request that takes them                                                                       |
+| `@lemonfiber/website-kit/run/*`               | The runners a site's scripts call: `guards`, `links`, `pins`, `bump`, `a11y`                                                           |
 
 A site's `scripts/guards.ts` is then a few lines:
 

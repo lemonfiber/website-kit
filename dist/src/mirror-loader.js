@@ -11,8 +11,24 @@
  * another's can land on this site rather than leaving it.
  */
 import { pathToFileURL } from "node:url";
-import { attributedPath, crossTable, editUrl, isFile, isIncluded, parseRevision, rewriteLinks, routeOf, routeTable, sourceUrl, titleOf, withoutLeadingHeading, } from "./mirror.js";
+import { z } from "astro/zod";
+import { attributedPath, crossTable, editUrl, isFile, isIncluded, parseRevision, rewriteLinks, routeOf, routeTable, sourceUrl, titleOf, upstreamPath, withoutLeadingHeading, } from "./mirror.js";
 import { gitLog, listing, read } from "./mirror-source.js";
+/**
+ * The schema a site's content collection declares `mirror` with, so that a field
+ * the loader stamps is one the collection keeps rather than strips.
+ */
+export const provenanceSchema = z
+    .object({
+    repo: z.string(),
+    label: z.string(),
+    remote: z.string(),
+    path: z.string(),
+    revision: z.string(),
+    date: z.string(),
+    source: z.string(),
+})
+    .optional();
 const CONTENT = "src/content/docs";
 /**
  * Sorted the way the paths read, not the way a locale would order them. A
@@ -77,6 +93,8 @@ export async function entriesOf(context, reading, root, cross) {
         const provenance = {
             repo: mirror.repo,
             label: mirror.label,
+            remote: mirror.remote,
+            path: upstreamPath(mirror, relative),
             revision: revision.sha,
             date: revision.date,
             source: sourceUrl(mirror, revision, relative),
