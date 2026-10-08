@@ -42,28 +42,55 @@ export const DIRECTIVES = [
 const directives = (options) => DIRECTIVES.map((one) => one.startsWith("connect-src ")
     ? [one, ...(options.connect ?? [])].join(" ")
     : one);
+/**
+ * Where the next `<tag` in `lower` from `from` opens that element, or -1. A
+ * longer name that starts the same, such as `<scripts` or `<header`, is passed.
+ */
+function openingAt(lower, tag, from) {
+    const open = `<${tag}`;
+    let at = lower.indexOf(open, from);
+    while (at !== -1) {
+        const after = lower.charAt(at + open.length);
+        if (after === ">" || /\s/.test(after))
+            return at;
+        at = lower.indexOf(open, at + open.length);
+    }
+    return -1;
+}
+/** Every opening `<tag …>` in `html`, scanned rather than matched. */
+function tags(html, tag) {
+    const lower = html.toLowerCase();
+    const found = [];
+    let at = openingAt(lower, tag, 0);
+    while (at !== -1) {
+        const close = lower.indexOf(">", at);
+        if (close === -1)
+            break;
+        found.push({
+            start: at,
+            end: close + 1,
+            attributes: html.slice(at + tag.length + 1, close),
+        });
+        at = openingAt(lower, tag, close + 1);
+    }
+    return found;
+}
 /** Every `<tag>…</tag>` in `html`, scanned rather than matched. */
 function blocks(html, tag) {
     const lower = html.toLowerCase();
-    const open = `<${tag}`;
     const close = `</${tag}>`;
     const found = [];
-    let at = lower.indexOf(open);
+    let at = openingAt(lower, tag, 0);
     while (at !== -1) {
-        const after = lower.charAt(at + open.length);
-        if (after !== ">" && !/\s/.test(after)) {
-            at = lower.indexOf(open, at + open.length);
-            continue;
-        }
         const end = lower.indexOf(">", at);
         const closing = end === -1 ? -1 : lower.indexOf(close, end);
         if (closing === -1)
             break;
         found.push({
-            attributes: html.slice(at + open.length, end),
+            attributes: html.slice(at + tag.length + 1, end),
             content: html.slice(end + 1, closing),
         });
-        at = lower.indexOf(open, closing + close.length);
+        at = openingAt(lower, tag, closing + close.length);
     }
     return found;
 }
@@ -87,21 +114,33 @@ export function policyFor(html, options = {}) {
     ].join("; ");
 }
 /** A policy element already in a page, written by Astro or by an earlier pass. */
-const EXISTING = /<meta\s+http-equiv=["']?content-security-policy["']?[^>]*>/gi;
-/** Where the policy goes: after the charset, or else first in the head. */
-const CHARSET = /<meta\s+charset=[^>]*>/i;
-const HEAD = /<head(?:\s[^>]*)?>/i;
+const IS_POLICY = /^\s+http-equiv=["']?content-security-policy\b/i;
+/** The charset's element, which the policy follows. */
+const IS_CHARSET = /^\s+charset=/i;
+/** `html` without the policy elements it already holds. */
+function withoutPolicy(html) {
+    let bare = "";
+    let from = 0;
+    for (const one of tags(html, "meta")) {
+        if (!IS_POLICY.test(one.attributes))
+            continue;
+        bare += html.slice(from, one.start);
+        from = one.end;
+    }
+    return bare + html.slice(from);
+}
 /**
  * `html` with its policy as the first thing its head declares after the
  * charset, ahead of every block the policy governs. A page with no head is
  * returned as it is.
  */
 export function withPolicy(html, options = {}) {
-    const bare = html.replace(EXISTING, "");
-    const anchor = CHARSET.exec(bare) ?? HEAD.exec(bare);
-    if (anchor === null)
+    const bare = withoutPolicy(html);
+    const anchor = tags(bare, "meta").find((one) => IS_CHARSET.test(one.attributes)) ??
+        tags(bare, "head")[0];
+    if (anchor === undefined)
         return html;
-    const end = anchor.index + anchor[0].length;
+    const { end } = anchor;
     const meta = `<meta http-equiv="content-security-policy" content="${policyFor(bare, options)}">`;
     return `${bare.slice(0, end)}${meta}${bare.slice(end)}`;
 }

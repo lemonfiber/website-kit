@@ -172,6 +172,42 @@ h1 {
   border-bottom-color: var(--line);
 }
 
+/* A reference table whose rows are records — one code, one field — reads as a
+   column of cards on a narrow screen rather than a grid to scroll across.
+   Each cell names its column in `data-label`, which takes the header's place;
+   a cell without one, such as the record's own identifier, heads the card. */
+@media (max-width: 50rem) {
+  .lf-cards,
+  .lf-cards :is(tbody, tr, td, th) {
+    display: block;
+    min-width: 0;
+  }
+  .lf-cards thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .lf-table .lf-cards tr {
+    padding-block: var(--sp-3);
+    border-bottom: 1px solid var(--line);
+  }
+  .lf-table .lf-cards :is(td, th) {
+    min-width: 0;
+    padding: var(--sp-1) 0;
+    border-bottom: 0;
+  }
+  .lf-cards td[data-label]::before {
+    content: attr(data-label);
+    display: block;
+    color: var(--muted);
+    font-size: var(--text-stamp);
+    font-weight: 600;
+  }
+}
+
 /* ── Inline code ────────────────────────────────────────────────────── */
 
 /* Canvas on paper is too close to read as a chip; a hairline gives it an edge

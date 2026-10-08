@@ -88,6 +88,22 @@ describe("withPolicy", () => {
     );
     expect(withPolicy("<p>fragment</p>")).toBe("<p>fragment</p>");
   });
+
+  it("anchors on the head rather than a header, and stops at a tag left open", () => {
+    expect(withPolicy("<header></header><head>")).toBe(
+      `<header></header><head><meta http-equiv="content-security-policy" content="${policyFor("<header></header><head>")}">`,
+    );
+    expect(withPolicy("<head><meta charset")).toMatch(
+      /^<head><meta http-equiv="content-security-policy" content="[^"]+"><meta charset$/,
+    );
+  });
+
+  it("reads a page of half-open policy tags in one pass", () => {
+    const hostile = '<meta http-equiv=content-security-policy"'.repeat(50_000);
+    const started = performance.now();
+    expect(withPolicy(`<head>${hostile}`)).toContain(hostile);
+    expect(performance.now() - started).toBeLessThan(1000);
+  });
 });
 
 describe("applyPolicy and sitePolicy", () => {

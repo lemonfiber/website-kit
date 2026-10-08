@@ -85,7 +85,9 @@ export default defineConfig({
 @import "@lemonfiber/website-kit/styles/starlight.css";
 ```
 
-A component that renders a table of its own wraps it the same way:
+A component that renders a table of its own wraps it the same way, and a
+table of records adds `class="lf-cards"` and a `data-label` on each cell to
+read as a column of cards on a narrow screen:
 `<div class="lf-table" role="region" tabindex="0" aria-labelledby="…">`.
 
 A site's Playwright suite holds each route to the layout at a phone's width:

@@ -10,7 +10,11 @@
 
 [default]
 # Ignore hotkey mockup notation like [e]rror, [s]ervice in TUI examples.
-extend-ignore-re = ["\\[[a-z]\\][a-zA-Z]+"]
+extend-ignore-re = [
+  "\\[[a-z]\\][a-zA-Z]+",
+  # A font's unicode-range, whose hex reads as words: U+0100-02BA.
+  "U\\+[0-9A-Fa-f?]+(-[0-9A-Fa-f]+)?",
+]
 
 [default.extend-words]
 ratatui = "ratatui"
