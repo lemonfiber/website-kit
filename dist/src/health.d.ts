@@ -2,9 +2,10 @@
  * The org's community health files, against the pages this site renders.
  *
  * `lemonfiber/.github` holds the files GitHub serves on behalf of every
- * repository in the org that defines none of its own, and this site's
- * contributing section is where a reader meets them. Each arrives as a mirror:
- * a symlink into `vendor/org`, declared in `mirrors.json`.
+ * repository in the org that defines none of its own, and a site that pins it
+ * as `vendor/org` is where a reader meets them. Each arrives as a mirror: a
+ * symlink into `vendor/org`, declared in `mirrors.json`. A site that does not
+ * pin the org renders none of them and is held to nothing here.
  *
  * A mirror pointing at a file that is not there is caught by the mirror rule. A
  * file that is there and no mirror points at is not: the org gains a governance
@@ -20,6 +21,12 @@
 import type { Declared, Violation } from "./guards.ts";
 /** The org repository, whose whole tree decides what is published. */
 export declare const HEALTH = "vendor/org";
+/**
+ * Whether `.gitmodules` pins the org at `vendor/org`, which is what puts a site
+ * under these rules. Read line by line: a submodule's `path = …` names where it
+ * sits.
+ */
+export declare function pinsOrg(gitmodules: string): boolean;
 /**
  * Every community health file the org publishes, by its path in that tree.
  *

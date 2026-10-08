@@ -6,6 +6,7 @@ import {
   healthFiles,
   healthViolations,
   mirroredFromOrg,
+  pinsOrg,
 } from "./health.ts";
 
 const at = (...paths: string[]): string[] =>
@@ -37,6 +38,27 @@ const messages = (
   paths: readonly string[],
   declared: readonly Declared[],
 ): string[] => healthViolations(paths, declared).map((one) => one.message);
+
+describe("pinsOrg", () => {
+  it("finds the org among the submodules", () => {
+    const gitmodules = [
+      '[submodule "vendor/brand"]',
+      "\tpath = vendor/brand",
+      '[submodule "vendor/org"]',
+      "\tpath = vendor/org",
+      "\turl = https://github.com/lemonfiber/.github",
+    ].join("\n");
+    expect(pinsOrg(gitmodules)).toBe(true);
+  });
+
+  it("finds no org where none is pinned, or only named", () => {
+    expect(pinsOrg('[submodule "vendor/brand"]\n\tpath = vendor/brand')).toBe(
+      false,
+    );
+    expect(pinsOrg("\turl = vendor/org\n\tpath")).toBe(false);
+    expect(pinsOrg("")).toBe(false);
+  });
+});
 
 describe("healthFiles", () => {
   it("takes the files GitHub serves and passes over the rest", () => {

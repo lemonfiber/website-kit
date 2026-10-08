@@ -17,7 +17,7 @@ import {
   type SourceFile,
   type Violation,
 } from "./guards.ts";
-import { HEALTH, healthViolations } from "./health.ts";
+import { HEALTH, healthViolations, pinsOrg } from "./health.ts";
 import { lockViolations } from "./lockfile.ts";
 import { INSTALLED, STYLESHEET, TOKENS, tokenViolations } from "./tokens.ts";
 import { mirrorStates, relativeTo, textOf, walk } from "./tree.ts";
@@ -103,7 +103,9 @@ export async function readTree(
     ...authored.flatMap((file) => fileViolations(file)),
     ...mirrorViolations(declared, state),
     ...collisionViolations(owned, declared),
-    ...healthViolations(await files(HEALTH), declared),
+    ...(pinsOrg(await text(".gitmodules"))
+      ? healthViolations(await files(HEALTH), declared)
+      : []),
     ...tokenViolations(
       await text(TOKENS),
       await text(INSTALLED),

@@ -7,7 +7,7 @@
 import { readFile } from "node:fs/promises";
 import { join, relative, sep } from "node:path";
 import { collisionViolations, fileViolations, mirrorViolations, routeOf, } from "./guards.js";
-import { HEALTH, healthViolations } from "./health.js";
+import { HEALTH, healthViolations, pinsOrg } from "./health.js";
 import { lockViolations } from "./lockfile.js";
 import { INSTALLED, STYLESHEET, TOKENS, tokenViolations } from "./tokens.js";
 import { mirrorStates, relativeTo, textOf, walk } from "./tree.js";
@@ -47,7 +47,9 @@ export async function readTree(root) {
         ...authored.flatMap((file) => fileViolations(file)),
         ...mirrorViolations(declared, state),
         ...collisionViolations(owned, declared),
-        ...healthViolations(await files(HEALTH), declared),
+        ...(pinsOrg(await text(".gitmodules"))
+            ? healthViolations(await files(HEALTH), declared)
+            : []),
         ...tokenViolations(await text(TOKENS), await text(INSTALLED), await text(STYLESHEET)),
         ...lockViolations(await text("package.json"), await text("package-lock.json")),
     ];
