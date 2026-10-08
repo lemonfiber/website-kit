@@ -5,6 +5,7 @@ import {
   INSTALLED,
   readsIn,
   STYLESHEET,
+  THEME,
   TOKENS,
   tokenViolations,
 } from "./tokens.ts";
@@ -154,5 +155,27 @@ describe("tokenViolations", () => {
     expect(violations("body { color: red; }")).toEqual([
       `${STYLESHEET}:null no brand token is read here — a rename left this watching nothing`,
     ]);
+  });
+
+  it("holds the shared theme to the tokens, and names it where it errs", () => {
+    const theme = ":root {\n  --x: var(--lf-color-lime);\n}";
+    expect(
+      tokenViolations(BRAND, BRAND, "", theme).map(
+        (one) => `${one.where}:${String(one.line)} ${one.message}`,
+      ),
+    ).toEqual([
+      `${THEME}:2 reads --lf-color-lime, and ${TOKENS} declares no such token`,
+    ]);
+  });
+
+  it("reads a stylesheet that only imports the theme as watching the theme", () => {
+    expect(
+      tokenViolations(
+        BRAND,
+        BRAND,
+        '@import "theme";',
+        ":root { --i: var(--lf-color-ink); }",
+      ),
+    ).toEqual([]);
   });
 });

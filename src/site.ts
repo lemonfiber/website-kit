@@ -19,7 +19,13 @@ import {
 } from "./guards.ts";
 import { HEALTH, healthViolations, pinsOrg } from "./health.ts";
 import { lockViolations } from "./lockfile.ts";
-import { INSTALLED, STYLESHEET, TOKENS, tokenViolations } from "./tokens.ts";
+import {
+  INSTALLED,
+  STYLESHEET,
+  THEME,
+  TOKENS,
+  tokenViolations,
+} from "./tokens.ts";
 import { mirrorStates, relativeTo, textOf, walk } from "./tree.ts";
 
 /** Where Starlight keeps a site's pages, relative to its root. */
@@ -110,6 +116,7 @@ export async function readTree(
       await text(TOKENS),
       await text(INSTALLED),
       await text(STYLESHEET),
+      await text(THEME),
     ),
     ...lockViolations(
       await text("package.json"),

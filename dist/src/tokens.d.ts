@@ -24,6 +24,8 @@ export declare const TOKENS = "vendor/brand/tokens/tokens.css";
 export declare const INSTALLED = "node_modules/@lemonfiber/brand/tokens/tokens.css";
 /** The stylesheet held to them. */
 export declare const STYLESHEET = "src/app.css";
+/** The shared theme a Starlight site's stylesheet imports, held to them too. */
+export declare const THEME = "node_modules/@lemonfiber/website-kit/styles/starlight.css";
 /** What a stylesheet declares about the brand's tokens. */
 export interface Declared {
     /** Each token's value, under the selector declaring it. */
@@ -45,10 +47,11 @@ export declare function declaredIn(css: string): Declared;
 /** Every place a stylesheet reads a brand token. */
 export declare function readsIn(css: string): Read[];
 /**
- * The stylesheet and the two copies of brand, against each other.
+ * The stylesheet, the shared theme it imports, and the two copies of brand,
+ * against each other.
  *
  * An empty set of tokens is a violation rather than a clean run: nothing to
  * compare agrees with everything, and a stylesheet held to no tokens at all is
  * the unchecked stylesheet this replaces.
  */
-export declare function tokenViolations(vendored: string, installed: string, css: string): Violation[];
+export declare function tokenViolations(vendored: string, installed: string, css: string, theme?: string): Violation[];

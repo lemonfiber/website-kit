@@ -1,0 +1,230 @@
+/**
+ * The visual language of a Starlight site, on brand's tokens.
+ *
+ * A site imports this from its own stylesheet, after brand's tokens:
+ *
+ *     @import "@lemonfiber/brand/tokens.css";
+ *     @import "@lemonfiber/website-kit/styles/starlight.css";
+ *
+ * It renames brand's tokens into the names the rules below use and points
+ * Starlight's own scale at them. It defines no colour of its own in either
+ * theme: brand owns the values, so a change there reaches every site, and a gap
+ * there stays visible.
+ *
+ * Brand's dark theme is `[data-lf-theme="ink"]` and Starlight's is
+ * `[data-theme="dark"]`. A site mirrors Starlight's attribute onto brand's.
+ *
+ * Starlight's own styles sit in cascade layers. These rules are unlayered, so
+ * they win over a layered rule of any specificity.
+ */
+
+:root {
+  --ink: var(--lf-color-ink);
+  --paper: var(--lf-color-paper);
+  --pith: var(--lf-color-pith);
+  --canvas: var(--lf-color-canvas);
+  --line: var(--lf-color-line);
+  --line-soft: var(--lf-color-line-soft);
+  --muted: var(--lf-color-text-muted);
+  --faint: var(--lf-color-text-faint);
+  --lemon: var(--lf-color-lemon);
+  --lemon-bright: var(--lf-color-lemon-bright);
+  --fiber: var(--lf-color-fiber);
+  --fiber-deep: var(--lf-color-fiber-deep);
+
+  /* Brand defines --lf-color-text only in the ink theme; on paper the readable
+     text colour is ink. */
+  --text: var(--lf-color-text, var(--lf-color-ink));
+
+  --brandface: var(--lf-font-display);
+  --sans: var(--lf-font-body);
+  --mono: var(--lf-font-mono);
+
+  --r-sm: var(--lf-radius-sm);
+  --r-md: var(--lf-radius-md);
+
+  --sp-1: var(--lf-space-1);
+  --sp-2: var(--lf-space-2);
+  --sp-3: var(--lf-space-3);
+  --sp-4: var(--lf-space-4);
+  --sp-5: var(--lf-space-5);
+  --sp-6: var(--lf-space-6);
+
+  --tracking-eyebrow: var(--lf-tracking-eyebrow);
+  --text-stamp: var(--lf-size-caption);
+
+  /* Lemon is lemon in both themes, so what sits on it does not follow --text. */
+  --on-lemon: var(--lf-color-ink);
+
+  /* The ring every focusable control shows, in both themes. */
+  --focus-ring: 2px solid var(--fiber-deep);
+  --focus-offset: 2px;
+
+  /* The smallest box a control is given, WCAG 2.2's target size. */
+  --target-min: 24px;
+
+  /* The narrowest a table column may be squeezed before the table scrolls. */
+  --column-min: 18ch;
+
+  /* Starlight reads its own scale. Point it at the brand rather than restyling
+     each component. Both themes resolve through the same names, so brand's ink
+     block flips them without a second declaration here. */
+  --sl-font: var(--sans);
+  --sl-font-mono: var(--mono);
+
+  --sl-color-accent: var(--fiber-deep);
+  --sl-color-accent-low: var(--line-soft);
+  --sl-color-accent-high: var(--text);
+
+  --sl-color-white: var(--text);
+  --sl-color-gray-1: var(--text);
+  --sl-color-gray-2: var(--muted);
+  --sl-color-gray-3: var(--faint);
+  --sl-color-gray-4: var(--line);
+  --sl-color-gray-5: var(--line-soft);
+  --sl-color-gray-6: var(--pith);
+  --sl-color-gray-7: var(--canvas);
+  --sl-color-black: var(--paper);
+
+  --sl-color-bg: var(--paper);
+  --sl-color-bg-nav: var(--pith);
+  --sl-color-bg-sidebar: var(--pith);
+  --sl-color-bg-inline-code: var(--canvas);
+  --sl-color-text: var(--text);
+  --sl-color-text-accent: var(--fiber-deep);
+  --sl-color-hairline: var(--line);
+  --sl-color-hairline-light: var(--line-soft);
+}
+
+/* ── Type ─────────────────────────────────────────────────────────── */
+
+/* Headings and the site's name are set in brand's display face; body copy and
+   code take Starlight's font variables above. */
+:is(h1, h2, h3, h4, h5, h6),
+.site-title {
+  font-family: var(--brandface);
+}
+h1 {
+  font-weight: var(--lf-weight-display);
+  letter-spacing: var(--lf-tracking-display);
+}
+.sl-markdown-content :is(h2, h3, h4) {
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* The logo mark and the wordmark, as brand draws them side by side. */
+.site-title {
+  gap: var(--sp-2);
+  color: var(--text);
+  font-weight: var(--lf-weight-display);
+  letter-spacing: var(--lf-tracking-display);
+}
+.site-title img {
+  height: 1.75rem;
+  width: auto;
+}
+
+/* ── Focus ──────────────────────────────────────────────────────────── */
+
+/* One visible ring for every control, drawn by the keyboard and not the mouse. */
+:focus-visible {
+  outline: var(--focus-ring);
+  outline-offset: var(--focus-offset);
+}
+
+/* ── Tables ─────────────────────────────────────────────────────────── */
+
+/* A table sits in a region of its own that scrolls sideways when the table is
+   wider than the page, and that the keyboard can reach and scroll. The region
+   is added around every Markdown table by `scrollableTables`, and a component
+   that renders a table wraps it in the same class. */
+.lf-table {
+  overflow-x: auto;
+  max-width: 100%;
+  border-radius: var(--r-sm);
+}
+.lf-table:focus-visible {
+  outline-offset: 0;
+}
+.sl-markdown-content .lf-table > table,
+.lf-table > table {
+  display: table;
+  overflow: visible;
+  min-width: 100%;
+}
+
+/* A column keeps a readable width; the table scrolls before a cell is crushed
+   to a word a line. */
+.lf-table :is(th, td) {
+  min-width: var(--column-min);
+}
+.lf-table :is(th, td):first-child {
+  min-width: auto;
+}
+
+/* An identifier is read whole: a code in a cell does not break mid-token. */
+.lf-table :is(th, td) > code:only-child {
+  white-space: nowrap;
+}
+
+.lf-table thead th {
+  border-bottom-color: var(--line);
+}
+
+/* ── Inline code ────────────────────────────────────────────────────── */
+
+/* Canvas on paper is too close to read as a chip; a hairline gives it an edge
+   in both themes. */
+.sl-markdown-content :not(pre) > code {
+  border: 1px solid var(--line-soft);
+  border-radius: var(--r-sm);
+  overflow-wrap: anywhere;
+}
+
+/* ── Navigation ─────────────────────────────────────────────────────── */
+
+/* The current page is marked, not shouted: a tint and an edge rather than a
+   solid block that outweighs the page's own heading. */
+.sidebar-content a[aria-current="page"],
+.sidebar-content a[aria-current="page"]:hover,
+.sidebar-content a[aria-current="page"]:focus {
+  color: var(--text);
+  background-color: var(--line-soft);
+  box-shadow: inset 3px 0 0 var(--fiber-deep);
+}
+
+/* Every sidebar link is at least a target tall. */
+.sidebar-content a {
+  min-height: var(--target-min);
+}
+
+/* The menu button sits flush with the other header controls. */
+.sl-menu-button button,
+button.sl-menu-button {
+  box-shadow: none;
+}
+
+/* ── Motion ─────────────────────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ── Provenance ─────────────────────────────────────────────────────── */
+
+/* The freshness stamp a mirrored page carries. */
+.mirror-stamp {
+  margin-top: var(--sp-5);
+  padding-top: var(--sp-3);
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: var(--text-stamp);
+}
