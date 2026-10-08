@@ -1,0 +1,47 @@
+# The gates every repo in the org shares, kept in one place so improving one
+# improves all of them. Pinned by commit, bumped deliberately.
+name: ci
+
+on: [pull_request]
+
+permissions:
+  contents: read
+
+# A pull request pushed again cancels the run on its old head, which nobody
+# will read and which holds runners the org shares (Q-R75). Every other event
+# is grouped by its own run, so it is never cancelled and never cancels.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  # `pull-requests: write` is what lets the gate close a pull request whose
+  # citation is missing or names an identifier that does not exist, rather than
+  # only going red at it. The workflow-level `contents: read` above is the
+  # default for a job that declares nothing; a job-level block replaces that
+  # default outright, so `contents: read` is restated here rather than inherited.
+  spec-check:
+    permissions:
+      contents: read
+      pull-requests: write
+    uses: lemonfiber/spec/.github/workflows/spec-check.yml@c26ed83df4ecfeb0b1a2d4e565011605b67c648b # v1.0.38
+  hygiene:
+    uses: lemonfiber/spec/.github/workflows/hygiene.yml@c26ed83df4ecfeb0b1a2d4e565011605b67c648b # v1.0.38
+  # Every pin this repository holds on a shared workflow, against what the spec's
+  # default branch holds now. It fails naming the commits a pin has not taken; a
+  # run that could not ask which they are says so rather than reporting clean.
+  workflow-pins:
+    uses: lemonfiber/spec/.github/workflows/workflow-pins.yml@c26ed83df4ecfeb0b1a2d4e565011605b67c648b # v1.0.38
+  security:
+    uses: lemonfiber/spec/.github/workflows/security.yml@c26ed83df4ecfeb0b1a2d4e565011605b67c648b # v1.0.38
+  dco:
+    uses: lemonfiber/spec/.github/workflows/dco.yml@c26ed83df4ecfeb0b1a2d4e565011605b67c648b # v1.0.38
+  attribution:
+    uses: lemonfiber/spec/.github/workflows/attribution.yml@c26ed83df4ecfeb0b1a2d4e565011605b67c648b # v1.0.38
+  commitlint:
+    uses: lemonfiber/spec/.github/workflows/commitlint.yml@c26ed83df4ecfeb0b1a2d4e565011605b67c648b # v1.0.38
+  labeler:
+    permissions:
+      contents: read
+      pull-requests: write
+    uses: lemonfiber/spec/.github/workflows/labeler.yml@c26ed83df4ecfeb0b1a2d4e565011605b67c648b # v1.0.38

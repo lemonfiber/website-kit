@@ -1,0 +1,119 @@
+{
+  "name": "@lemonfiber/website-kit",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "What every lemonfiber site runs: mirroring other repositories' pages with provenance, link rewriting, the guards on authored chrome, the outbound link check, the pin checks and bump, the brand check and the accessibility sweep.",
+  "license": "SEE LICENSE IN LICENSE",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lemonfiber/website-kit.git"
+  },
+  "engines": {
+    "node": ">=26"
+  },
+  "files": [
+    "dist/"
+  ],
+  "exports": {
+    "./bump": {
+      "types": "./dist/src/bump.d.ts",
+      "default": "./dist/src/bump.js"
+    },
+    "./guards": {
+      "types": "./dist/src/guards.d.ts",
+      "default": "./dist/src/guards.js"
+    },
+    "./health": {
+      "types": "./dist/src/health.d.ts",
+      "default": "./dist/src/health.js"
+    },
+    "./links": {
+      "types": "./dist/src/links.d.ts",
+      "default": "./dist/src/links.js"
+    },
+    "./lockfile": {
+      "types": "./dist/src/lockfile.d.ts",
+      "default": "./dist/src/lockfile.js"
+    },
+    "./markup": {
+      "types": "./dist/src/markup.d.ts",
+      "default": "./dist/src/markup.js"
+    },
+    "./mirror": {
+      "types": "./dist/src/mirror.d.ts",
+      "default": "./dist/src/mirror.js"
+    },
+    "./mirror-loader": {
+      "types": "./dist/src/mirror-loader.d.ts",
+      "default": "./dist/src/mirror-loader.js"
+    },
+    "./mirror-source": {
+      "types": "./dist/src/mirror-source.d.ts",
+      "default": "./dist/src/mirror-source.js"
+    },
+    "./pins": {
+      "types": "./dist/src/pins.d.ts",
+      "default": "./dist/src/pins.js"
+    },
+    "./site": {
+      "types": "./dist/src/site.d.ts",
+      "default": "./dist/src/site.js"
+    },
+    "./tokens": {
+      "types": "./dist/src/tokens.d.ts",
+      "default": "./dist/src/tokens.js"
+    },
+    "./tree": {
+      "types": "./dist/src/tree.d.ts",
+      "default": "./dist/src/tree.js"
+    },
+    "./run/a11y": {
+      "types": "./dist/run/a11y.d.ts",
+      "default": "./dist/run/a11y.js"
+    },
+    "./run/bump": {
+      "types": "./dist/run/bump.d.ts",
+      "default": "./dist/run/bump.js"
+    },
+    "./run/guards": {
+      "types": "./dist/run/guards.d.ts",
+      "default": "./dist/run/guards.js"
+    },
+    "./run/links": {
+      "types": "./dist/run/links.d.ts",
+      "default": "./dist/run/links.js"
+    },
+    "./run/pins": {
+      "types": "./dist/run/pins.d.ts",
+      "default": "./dist/run/pins.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "built": "node scripts/built.ts",
+    "types": "tsc -p tsconfig.json --noEmit",
+    "lint": "eslint . --max-warnings 0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "coverage": "vitest run --coverage",
+    "ci": "npm run format:check && npm run lint && npm run types && npm run coverage && npm run built",
+    "prepare": "git config core.hooksPath .githooks"
+  },
+  "peerDependencies": {
+    "astro": ">=7"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^24.13.3",
+    "@vitest/coverage-v8": "^5.0.3",
+    "astro": "^7.3.5",
+    "eslint": "^10.12.0",
+    "globals": "^17.13.0",
+    "prettier": "^3.9.9",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.71.0",
+    "vitest": "^5.0.3"
+  }
+}

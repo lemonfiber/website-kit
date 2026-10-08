@@ -1,0 +1,67 @@
+# CodeQL static analysis (`Q-R53`). Two surfaces here. `javascript-typescript`
+# is the application code. `actions` is the workflows themselves, which call reusable workflows with a token and
+# are where injection and supply-chain flaws live — the surface every repository
+# in this organisation has, whatever it is written in.
+name: codeql
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "0 6 * * 2"
+permissions:
+  contents: read
+# A pull request pushed again cancels the run on its old head, which nobody
+# will read and which holds runners the org shares (Q-R75). Every other event
+# is grouped by its own run, so it is never cancelled and never cancels.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.ref || github.run_id }}
+  cancel-in-progress: true
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [actions, javascript-typescript]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: github/codeql-action/init@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v3
+        with:
+          languages: ${{ matrix.language }}
+      # No build step: neither language is compiled, so CodeQL extracts from the
+      # tree as it stands. No `category:` either — GitHub builds one from the
+      # matrix, and with a matrix that is a category naming its language, which
+      # is what the gate below compares against. A single-language job with no
+      # matrix is the case that needs one written by hand.
+      - uses: github/codeql-action/analyze@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v3
+
+  # The analysis finding something is not the same as anything stopping it. The
+  # check GitHub raises beside it compares the configurations a pull request
+  # produced against every one seen on `main`, and the supply-chain scan uploads
+  # three that only ever run on `main` — so it is neutral on every pull request,
+  # whatever the analysis found, and gates nothing. This asks the question that
+  # was meant: is there an open alert against what this branch proposes.
+  #
+  # `!cancelled()` rather than `always()`, and rather than `needs:` alone: a
+  # `needs:` dependency that fails makes this job vanish, and a skipped required
+  # check satisfies branch protection — so the one gate that refuses an alert
+  # would be absent in exactly the case where the analysis went wrong. A
+  # cancelled run is somebody pressing stop, and finishing the job they stopped
+  # serves nobody. The gate refuses a commit it has no analysis of, by language
+  # and by name, so running it after a failed analysis says what is missing
+  # rather than passing on an empty list.
+  alerts:
+    needs: analyze
+    if: ${{ !cancelled() }}
+    permissions:
+      contents: read
+      security-events: read
+    uses: lemonfiber/spec/.github/workflows/codeql-alerts.yml@c26ed83df4ecfeb0b1a2d4e565011605b67c648b # v1.0.38
+    with:
+      analysis: ${{ needs.analyze.result }}
