@@ -21,6 +21,7 @@ import {
   pathOf,
   readingOf,
   entriesOf,
+  provenanceSchema,
 } from "./mirror-loader.ts";
 import { gitLog, listing, read } from "./mirror-source.ts";
 
@@ -188,9 +189,16 @@ describe("mirrorLoader", () => {
     const provenance = page?.data["mirror"] as {
       source: string;
       label: string;
+      remote: string;
+      path: string;
     };
     expect(provenance.label).toBe("the repository");
     expect(provenance.source).toContain("/blob/");
+    expect(provenance.remote).toBe(`${FORGE}/repo`);
+    expect(provenance.path).toBe("docs/one.md");
+
+    expect(provenanceSchema.parse(provenance)).toEqual(provenance);
+    expect(provenanceSchema.parse(undefined)).toBeUndefined();
 
     const door = stored[3];
     expect(door?.data["title"]).toBe("The front door");

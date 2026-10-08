@@ -274,8 +274,11 @@ export function editUrl(mirror, relative) {
 }
 /** Where a reader sees exactly the bytes that were rendered. */
 export function sourceUrl(mirror, revision, relative) {
-    const path = isFile(mirror) ? mirror.path : join(mirror.path, relative);
-    return `${mirror.remote}/blob/${revision.sha}/${path}`;
+    return `${mirror.remote}/blob/${revision.sha}/${upstreamPath(mirror, relative)}`;
+}
+/** Where a page's source sits in the repository that owns it. */
+export function upstreamPath(mirror, relative) {
+    return isFile(mirror) ? mirror.path : join(mirror.path, relative);
 }
 /** `2026-08-23T04:20:11+02:00` as `2026-08-23`. */
 export function dayOf(iso) {

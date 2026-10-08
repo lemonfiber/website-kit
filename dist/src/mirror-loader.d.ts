@@ -1,13 +1,31 @@
 import type { Loader, LoaderContext } from "astro/loaders";
+import { z } from "astro/zod";
 import { type Mirror, type Revision } from "./mirror.ts";
 /** What the site knows about where a mirrored page came from. */
 export interface Provenance {
     readonly repo: string;
     readonly label: string;
+    /** The repository that owns the page, as its address on the forge. */
+    readonly remote: string;
+    /** Where the page's source sits in that repository. */
+    readonly path: string;
     readonly revision: string;
     readonly date: string;
     readonly source: string;
 }
+/**
+ * The schema a site's content collection declares `mirror` with, so that a field
+ * the loader stamps is one the collection keeps rather than strips.
+ */
+export declare const provenanceSchema: z.ZodOptional<z.ZodObject<{
+    repo: z.ZodString;
+    label: z.ZodString;
+    remote: z.ZodString;
+    path: z.ZodString;
+    revision: z.ZodString;
+    date: z.ZodString;
+    source: z.ZodString;
+}, z.core.$strip>>;
 /** One mirror, resolved against the checkout. */
 export interface Reading {
     readonly mirror: Mirror;
