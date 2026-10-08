@@ -106,7 +106,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
-    "@types/node": "^24.13.3",
+    "@types/node": "^26.6.4",
     "@vitest/coverage-v8": "^5.0.3",
     "astro": "^7.3.5",
     "eslint": "^10.12.0",
