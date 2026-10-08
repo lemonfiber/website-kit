@@ -4,20 +4,29 @@
 # The list below is also the wait list. The flag only goes up once every check
 # `main` requires has passed, and the reusable reads this list back out of this
 # file to know what it must see finish first, so a workflow missing from it is
-# one the gate never waits for. The required checks come from `ci` (the shared
-# gates), `gate` (this repository's own) and `sonar` (the scan, and the shared
-# SonarCloud issue gate it calls, `gate / gate` — a different check from
-# `gate`).
+# one the gate never waits for, and nothing afterwards notices the pull request
+# became mergeable. The checks `main` requires come from these workflows:
+#
+#   ci      spec-check / spec-check, dco / dco, commitlint / commitlint,
+#           attribution / attribution, workflow-pins / workflow-pins,
+#           hygiene / {actionlint, invite, lines, links, markdown, pins,
+#           shared-files, typos}, security / {gitleaks, osv-scanner}
+#   gate    gate
+#   sonar   coverage, sonar, gate / gate
+#   codeql  analyze (actions), analyze (javascript-typescript), alerts / alerts
+#
+# `SonarCloud Code Analysis` is required too and is posted by the SonarCloud app
+# rather than by a workflow, so it cannot be waited for by name; `sonar`'s
+# `gate / gate` reads that summary and cannot succeed before it exists. `gate`
+# and `gate / gate` are different checks: `gate` is this repository's own, and
+# `gate / gate` is the shared SonarCloud issue gate `sonar` calls. The
+# `coverage` job runs the suite and the `sonar` job is the scan; the issue gate
+# runs whatever they did, so it alone would pass either one failing.
+#
+# Add a workflow to branch protection and it belongs here in the same change.
 name: awaiting-maintainer
 on:
   workflow_run:
-    # `codeql` is here because of what its `alerts` job does rather than because a
-    # required context comes from it. That job refuses a branch an open alert
-    # stands against; a gating workflow left out of this list can be the last one
-    # to finish, with nothing afterwards to notice the pull request became
-    # mergeable — the flag never goes up and nothing says why. Naming it costs one
-    # more evaluation and means the list is already right on the day it is
-    # required.
     workflows: [ci, gate, sonar, codeql]
     types: [completed]
   pull_request_review:
