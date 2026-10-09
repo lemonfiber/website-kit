@@ -6,6 +6,7 @@ import { pathToFileURL } from "node:url";
 
 import { afterEach, describe, expect, it } from "vitest";
 
+import { HEADERS_FILE, headersFile } from "./headers.ts";
 import {
   applyPolicy,
   DIRECTIVES,
@@ -130,11 +131,27 @@ describe("applyPolicy and sitePolicy", () => {
     await writeFile(join(dir, "index.html"), "<head></head>");
     const integration = sitePolicy({ connect: ["https://api.example"] });
     expect(integration.name).toBe("lemonfiber-site-policy");
+    integration.hooks["astro:config:done"]({ config: { base: "/" } });
     await integration.hooks["astro:build:done"]({
       dir: pathToFileURL(`${dir}/`),
     });
     expect(await readFile(join(dir, "index.html"), "utf8")).toContain(
       "connect-src 'self' https://api.example;",
     );
+    expect(await readFile(join(dir, HEADERS_FILE), "utf8")).toBe(headersFile());
+  });
+
+  it("writes no headers file for a build served under a sub-path", async () => {
+    dir = await mkdtemp(join(tmpdir(), "csp-"));
+    await writeFile(join(dir, "index.html"), "<head></head>");
+    const integration = sitePolicy();
+    integration.hooks["astro:config:done"]({ config: { base: "/next/" } });
+    await integration.hooks["astro:build:done"]({
+      dir: pathToFileURL(`${dir}/`),
+    });
+    expect(await readFile(join(dir, "index.html"), "utf8")).toContain(
+      "content-security-policy",
+    );
+    await expect(readFile(join(dir, HEADERS_FILE), "utf8")).rejects.toThrow();
   });
 });

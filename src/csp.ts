@@ -23,6 +23,7 @@ import { createHash } from "node:crypto";
 import { readFile, writeFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 
+import { writeHeaders } from "./headers.ts";
 import { walk } from "./tree.ts";
 
 /** The directives every page carries, whatever its inline blocks. */
@@ -194,13 +195,28 @@ export async function applyPolicy(
   return pages.length;
 }
 
-/** The Astro integration that writes each built page's policy. */
+/**
+ * The Astro integration that writes each built page's policy, and the
+ * `_headers` file the host sends with every page. A build served under a
+ * sub-path, such as a site's `/next/`, is not the root the host reads that
+ * file from, so it is written only for a build at `/`.
+ */
 export function sitePolicy(options: PolicyOptions = {}) {
+  let atRoot = true;
   return {
     name: "lemonfiber-site-policy",
     hooks: {
+      "astro:config:done": ({
+        config,
+      }: {
+        readonly config: { readonly base: string };
+      }) => {
+        atRoot = config.base.replaceAll("/", "") === "";
+      },
       "astro:build:done": async ({ dir }: { readonly dir: URL }) => {
-        await applyPolicy(fileURLToPath(dir), options);
+        const root = fileURLToPath(dir);
+        await applyPolicy(root, options);
+        if (atRoot) await writeHeaders(root);
       },
     },
   };

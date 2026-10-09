@@ -35,9 +35,10 @@ Nothing is published to a registry.
 | `@lemonfiber/website-kit/run/*`                | The runners a site's scripts call: `guards`, `links`, `pins`, `bump`, `a11y`                                                                                                           |
 | `@lemonfiber/website-kit/layout`               | `probeLayout`, run in the page by a site's Playwright suite, and `layoutViolations`: a page wider than the screen, and a box that scrolls sideways with nothing the keyboard can reach |
 | `@lemonfiber/website-kit/tables`               | `scrollableTables`, the Markdown plugin that wraps every Markdown table in a labelled region that takes focus and scrolls                                                              |
-| `@lemonfiber/website-kit/csp`                  | `sitePolicy`, the Astro integration that writes each built page's Content-Security-Policy, hashing every inline script and style the page holds                                        |
+| `@lemonfiber/website-kit/csp`                  | `sitePolicy`, the Astro integration that writes each built page's Content-Security-Policy, hashing every inline script and style the page holds, and the build's `_headers` file       |
+| `@lemonfiber/website-kit/headers`              | The response headers the host sends with every page, the `_headers` file that carries them, and `headersViolations` for a site's test of its build                                     |
 | `@lemonfiber/website-kit/brand`                | Brand's logo mark, as Starlight's `logo` option takes it                                                                                                                               |
-| `@lemonfiber/website-kit/styles/starlight.css` | The Starlight theme on brand's tokens: type, focus, tables, inline code, navigation and motion                                                                                         |
+| `@lemonfiber/website-kit/styles/starlight.css` | The Starlight theme on brand's tokens: type, focus, tables, inline code, navigation, the splash hero and motion                                                                        |
 | `@lemonfiber/website-kit/styles/fonts.css`     | Golos Text, Bricolage Grotesque and DM Mono, served by the site itself                                                                                                                 |
 
 A site's `scripts/guards.ts` is then a few lines:
@@ -78,6 +79,12 @@ export default defineConfig({
   ],
 });
 ```
+
+`sitePolicy` also writes `_headers` at the root of a build served at `/`: HSTS,
+`nosniff`, the referrer and permissions policies, `frame-ancestors 'none'`,
+`X-Frame-Options` and `Cross-Origin-Opener-Policy` on every page, which a meta
+policy cannot carry, and `noindex` on the host's own `workers.dev` addresses.
+The host reads the file and does not serve it.
 
 ```css
 @import "@lemonfiber/brand/tokens.css";
