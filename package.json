@@ -21,6 +21,10 @@
       "types": "./dist/src/bump.d.ts",
       "default": "./dist/src/bump.js"
     },
+    "./headers": {
+      "types": "./dist/src/headers.d.ts",
+      "default": "./dist/src/headers.js"
+    },
     "./csp": {
       "types": "./dist/src/csp.d.ts",
       "default": "./dist/src/csp.js"

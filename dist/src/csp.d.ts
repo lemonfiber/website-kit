@@ -15,10 +15,20 @@ export declare function policyFor(html: string, options?: PolicyOptions): string
 export declare function withPolicy(html: string, options?: PolicyOptions): string;
 /** Write the policy into every page under `root`; how many pages it wrote. */
 export declare function applyPolicy(root: string, options?: PolicyOptions): Promise<number>;
-/** The Astro integration that writes each built page's policy. */
+/**
+ * The Astro integration that writes each built page's policy, and the
+ * `_headers` file the host sends with every page. A build served under a
+ * sub-path, such as a site's `/next/`, is not the root the host reads that
+ * file from, so it is written only for a build at `/`.
+ */
 export declare function sitePolicy(options?: PolicyOptions): {
     name: string;
     hooks: {
+        "astro:config:done": ({ config, }: {
+            readonly config: {
+                readonly base: string;
+            };
+        }) => void;
         "astro:build:done": ({ dir }: {
             readonly dir: URL;
         }) => Promise<void>;
