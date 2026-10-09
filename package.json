@@ -126,7 +126,7 @@
     "test": "vitest run",
     "coverage": "vitest run --coverage",
     "ci": "npm run format:check && npm run lint && npm run types && npm run coverage && npm run built",
-    "prepare": "git config core.hooksPath .githooks"
+    "prepare": "git rev-parse --git-dir >/dev/null 2>&1 || exit 0; git config core.hooksPath .githooks"
   },
   "peerDependencies": {
     "astro": ">=7"
