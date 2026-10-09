@@ -241,6 +241,17 @@ button.sl-menu-button {
   box-shadow: none;
 }
 
+/* ── Splash ─────────────────────────────────────────────────────────── */
+
+/* A landing page's hero leads straight into the page: on a wide screen
+   Starlight pads it by a tenth of the viewport above and below, which leaves
+   a band of empty paper either side of the title. */
+@media (min-width: 50rem) {
+  .hero {
+    padding-block: var(--sp-6);
+  }
+}
+
 /* ── Motion ─────────────────────────────────────────────────────────── */
 
 @media (prefers-reduced-motion: reduce) {
