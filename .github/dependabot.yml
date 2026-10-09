@@ -44,6 +44,13 @@ updates:
       include: scope
     cooldown:
       default-days: 3
+    # `typescript` is held below 7: `typescript-eslint`, which lints this
+    # package, declares `typescript: >=4.8.4 <6.1.0` as its peer, so npm refuses
+    # an install with 7. Its release that accepts 7 arrives as its own update,
+    # and typescript moves with it in the same pull request.
+    ignore:
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major"]
     groups:
       # `@vitest/coverage-v8@X` declares an exact peer on `vitest@X`, so the two
       # are one upgrade: offered apart, neither resolves. First match wins, so the
