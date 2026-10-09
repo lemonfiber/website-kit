@@ -7,10 +7,8 @@
 # one the gate never waits for, and nothing afterwards notices the pull request
 # became mergeable. The checks `main` requires come from these workflows:
 #
-#   ci      spec-check / spec-check, dco / dco, commitlint / commitlint,
-#           attribution / attribution, workflow-pins / workflow-pins,
-#           hygiene / {actionlint, invite, lines, links, markdown, pins,
-#           shared-files, typos}, security / {gitleaks, osv-scanner}
+#   gates   gates / gates
+#   pin-only pin-only / pin-only
 #   gate    gate
 #   sonar   coverage, sonar, gate / gate
 #   codeql  analyze (actions), analyze (javascript-typescript), alerts / alerts
@@ -27,7 +25,7 @@
 name: awaiting-maintainer
 on:
   workflow_run:
-    workflows: [ci, gate, sonar, codeql]
+    workflows: [gates, pin-only, gate, sonar, codeql]
     types: [completed]
   pull_request_review:
     types: [submitted]
@@ -43,6 +41,6 @@ jobs:
     permissions:
       contents: read
       pull-requests: write
-    uses: lemonfiber/spec/.github/workflows/awaiting-maintainer.yml@d39729a2ee2b66266e3819465392abcd684f2feb # v1.0.53
+    uses: lemonfiber/spec/.github/workflows/awaiting-maintainer.yml@4562180c9f974bf03aa9be34610f83bb6eb06029 # v1.0.61
     secrets:
       DISCORD_MAINTAINERS_WEBHOOK: ${{ secrets.DISCORD_MAINTAINERS_WEBHOOK }}
