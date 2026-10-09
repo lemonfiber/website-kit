@@ -165,7 +165,7 @@ export function sitePolicy(options = {}) {
         name: "lemonfiber-site-policy",
         hooks: {
             "astro:config:done": ({ config, }) => {
-                atRoot = config.base.replace(/\/+$/, "") === "";
+                atRoot = config.base.replaceAll("/", "") === "";
             },
             "astro:build:done": async ({ dir }) => {
                 const root = fileURLToPath(dir);

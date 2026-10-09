@@ -211,7 +211,7 @@ export function sitePolicy(options: PolicyOptions = {}) {
       }: {
         readonly config: { readonly base: string };
       }) => {
-        atRoot = config.base.replace(/\/+$/, "") === "";
+        atRoot = config.base.replaceAll("/", "") === "";
       },
       "astro:build:done": async ({ dir }: { readonly dir: URL }) => {
         const root = fileURLToPath(dir);
