@@ -30,6 +30,10 @@ export const INSTALLED = "node_modules/@lemonfiber/brand/tokens/tokens.css";
 /** The stylesheet held to them. */
 export const STYLESHEET = "src/app.css";
 
+/** The shared theme a Starlight site's stylesheet imports, held to them too. */
+export const THEME =
+  "node_modules/@lemonfiber/website-kit/styles/starlight.css";
+
 /** What every brand custom property's name starts with. */
 const PREFIX = "--lf-";
 
@@ -172,9 +176,47 @@ function copyViolations(vendored: Declared, installed: Declared): Violation[] {
       ];
 }
 
-/** What the stylesheet reads that the tokens do not answer. */
-function readViolations(brand: Declared, css: string): Violation[] {
-  const reads = readsIn(css);
+/** One stylesheet held to the tokens, by where it is read from. */
+interface Sheet {
+  readonly path: string;
+  readonly css: string;
+}
+
+/** What one read of a brand token gets wrong, if anything. */
+function readViolation(
+  brand: Declared,
+  path: string,
+  read: Read,
+): Violation | null {
+  if (!brand.names.has(read.name))
+    return at(
+      path,
+      read.line,
+      `reads ${read.name}, and ${TOKENS} declares no such token`,
+    );
+  if (!brand.always.has(read.name) && !read.fallback)
+    return at(
+      path,
+      read.line,
+      `reads ${read.name} with no fallback, and ${TOKENS} declares it only in a theme`,
+    );
+  if (brand.always.has(read.name) && read.fallback)
+    return at(
+      path,
+      read.line,
+      `gives ${read.name} a fallback, and ${TOKENS} declares it for every theme`,
+    );
+  return null;
+}
+
+/** What the stylesheets read that the tokens do not answer. */
+function readViolations(
+  brand: Declared,
+  sheets: readonly Sheet[],
+): Violation[] {
+  const reads = sheets.flatMap((sheet) =>
+    readsIn(sheet.css).map((read) => ({ path: sheet.path, read })),
+  );
   if (reads.length === 0)
     return [
       at(
@@ -183,43 +225,15 @@ function readViolations(brand: Declared, css: string): Violation[] {
         `no brand token is read here — a rename left this watching nothing`,
       ),
     ];
-
-  const found: Violation[] = [];
-
-  for (const read of reads) {
-    if (!brand.names.has(read.name)) {
-      found.push(
-        at(
-          STYLESHEET,
-          read.line,
-          `reads ${read.name}, and ${TOKENS} declares no such token`,
-        ),
-      );
-      continue;
-    }
-    if (!brand.always.has(read.name) && !read.fallback)
-      found.push(
-        at(
-          STYLESHEET,
-          read.line,
-          `reads ${read.name} with no fallback, and ${TOKENS} declares it only in a theme`,
-        ),
-      );
-    if (brand.always.has(read.name) && read.fallback)
-      found.push(
-        at(
-          STYLESHEET,
-          read.line,
-          `gives ${read.name} a fallback, and ${TOKENS} declares it for every theme`,
-        ),
-      );
-  }
-
-  return found;
+  return reads.flatMap(({ path, read }) => {
+    const wrong = readViolation(brand, path, read);
+    return wrong === null ? [] : [wrong];
+  });
 }
 
 /**
- * The stylesheet and the two copies of brand, against each other.
+ * The stylesheet, the shared theme it imports, and the two copies of brand,
+ * against each other.
  *
  * An empty set of tokens is a violation rather than a clean run: nothing to
  * compare agrees with everything, and a stylesheet held to no tokens at all is
@@ -229,6 +243,7 @@ export function tokenViolations(
   vendored: string,
   installed: string,
   css: string,
+  theme = "",
 ): Violation[] {
   const pinned = declaredIn(vendored);
   if (pinned.names.size === 0)
@@ -250,5 +265,11 @@ export function tokenViolations(
       ),
     ];
 
-  return [...copyViolations(pinned, shipped), ...readViolations(pinned, css)];
+  return [
+    ...copyViolations(pinned, shipped),
+    ...readViolations(pinned, [
+      { path: STYLESHEET, css },
+      { path: THEME, css: theme },
+    ]),
+  ];
 }

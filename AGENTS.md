@@ -25,7 +25,9 @@ taken by each at an exact commit: `"@lemonfiber/website-kit":
   command that runs them) into the functions here.
 - **`src/` is covered at 100%.** The runners under `run/` hand the rules the
   process, the console and the network, and are typed and linted.
-- **No runtime dependencies.** A site's dependency tree is its own.
+- **No runtime dependencies.** A site's dependency tree is its own. The faces
+  under `styles/fonts/` are committed files with their licences beside them,
+  not packages.
 
 ## Before you push
 

@@ -9,7 +9,7 @@ import { join, relative, sep } from "node:path";
 import { collisionViolations, fileViolations, mirrorViolations, routeOf, } from "./guards.js";
 import { HEALTH, healthViolations, pinsOrg } from "./health.js";
 import { lockViolations } from "./lockfile.js";
-import { INSTALLED, STYLESHEET, TOKENS, tokenViolations } from "./tokens.js";
+import { INSTALLED, STYLESHEET, THEME, TOKENS, tokenViolations, } from "./tokens.js";
 import { mirrorStates, relativeTo, textOf, walk } from "./tree.js";
 /** Where Starlight keeps a site's pages, relative to its root. */
 export const CONTENT = "src/content/docs";
@@ -50,7 +50,7 @@ export async function readTree(root) {
         ...(pinsOrg(await text(".gitmodules"))
             ? healthViolations(await files(HEALTH), declared)
             : []),
-        ...tokenViolations(await text(TOKENS), await text(INSTALLED), await text(STYLESHEET)),
+        ...tokenViolations(await text(TOKENS), await text(INSTALLED), await text(STYLESHEET), await text(THEME)),
         ...lockViolations(await text("package.json"), await text("package-lock.json")),
     ];
     if (authored.length === 0)
