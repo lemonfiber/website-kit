@@ -31,7 +31,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: github/codeql-action/init@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v3
+      - uses: github/codeql-action/init@24c54180a607b1449ed407dd24f251e4e9147c8d # v3
         with:
           languages: ${{ matrix.language }}
       # No build step: neither language is compiled, so CodeQL extracts from the
@@ -39,7 +39,7 @@ jobs:
       # matrix, and with a matrix that is a category naming its language, which
       # is what the gate below compares against. A single-language job with no
       # matrix is the case that needs one written by hand.
-      - uses: github/codeql-action/analyze@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v3
+      - uses: github/codeql-action/analyze@24c54180a607b1449ed407dd24f251e4e9147c8d # v3
 
   # The analysis finding something is not the same as anything stopping it. The
   # check GitHub raises beside it compares the configurations a pull request
