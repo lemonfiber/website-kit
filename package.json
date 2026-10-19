@@ -85,6 +85,10 @@
       "types": "./dist/src/site.d.ts",
       "default": "./dist/src/site.js"
     },
+    "./search": {
+      "types": "./dist/src/search.d.ts",
+      "default": "./dist/src/search.js"
+    },
     "./tables": {
       "types": "./dist/src/tables.d.ts",
       "default": "./dist/src/tables.js"
