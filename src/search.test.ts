@@ -30,6 +30,24 @@ describe("namedByItsLabel", () => {
     expect(namedByItsLabel(page(RENDERED))).toBe(page(NAMED));
   });
 
+  it("leaves a button whose attribute only starts with the same name alone", () => {
+    const other = `<button data-open-modal-other>Open</button>`;
+    expect(namedByItsLabel(page(RENDERED) + other)).toBe(page(NAMED) + other);
+  });
+
+  it("fails on a search button that is never closed", () => {
+    expect(() => namedByItsLabel(RENDERED.replace("</button>", ""))).toThrow(
+      "never closed",
+    );
+  });
+
+  it("reads a page of unclosed openings in time that grows with the page", () => {
+    const hostile = `${"<button data-open-modal\t".repeat(50_000)}</button>`;
+    const started = performance.now();
+    expect(() => namedByItsLabel(hostile)).toThrow();
+    expect(performance.now() - started).toBeLessThan(1000);
+  });
+
   it("leaves a page with no search button as it is", () => {
     expect(namedByItsLabel(`${DIALOG}${SCRIPT}`)).toBe(`${DIALOG}${SCRIPT}`);
   });

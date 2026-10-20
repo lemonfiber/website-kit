@@ -22,7 +22,8 @@ import { fileURLToPath } from "node:url";
 import { walk } from "./tree.js";
 /** The class the shared stylesheet hides the word from sight with on a narrow screen. */
 export const SEARCH_LABEL = "lf-search-label";
-const BUTTON = /<button data-open-modal[\s>][\s\S]*?<\/button>/g;
+const OPENS = "<button data-open-modal";
+const CLOSES = "</button>";
 /** Each part of the button as Starlight renders it, and what it becomes. */
 const REWRITES = [
     [/^(<button[^>]*?) aria-label="[^"]*"/, "$1"],
@@ -46,9 +47,32 @@ function named(button) {
     }
     return rewritten;
 }
-/** `html` with every search button in it named by its word. */
+/**
+ * `html` with every search button in it named by its word. Each button is
+ * found by scanning forward for its opening and then its closing, so the
+ * work grows with the page and no input makes it backtrack.
+ */
 export function namedByItsLabel(html) {
-    return html.replace(BUTTON, named);
+    let rewritten = "";
+    let from = 0;
+    for (;;) {
+        const start = html.indexOf(OPENS, from);
+        if (start === -1)
+            return rewritten + html.slice(from);
+        const after = start + OPENS.length;
+        if (!/[\s>]/.test(html.charAt(after))) {
+            rewritten += html.slice(from, after);
+            from = after;
+            continue;
+        }
+        const end = html.indexOf(CLOSES, after);
+        if (end === -1) {
+            throw new Error("Starlight's search button is never closed; read it again before it ships");
+        }
+        const stop = end + CLOSES.length;
+        rewritten += html.slice(from, start) + named(html.slice(start, stop));
+        from = stop;
+    }
 }
 /** Name the search button in every page under `root`; how many pages held one. */
 export async function nameSearch(root) {
