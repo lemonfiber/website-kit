@@ -26,4 +26,4 @@ jobs:
     permissions:
       contents: read
       pull-requests: read
-    uses: lemonfiber/spec/.github/workflows/pin-only.yml@2fc314fa018cfddfbd689bb78bf23e699806e180 # v1.0.124
+    uses: lemonfiber/spec/.github/workflows/pin-only.yml@c5e71bae1a1e2a7c499fa85a4679501d041eafaf # v1.0.136
