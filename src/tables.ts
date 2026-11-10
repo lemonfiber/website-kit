@@ -10,9 +10,11 @@
  *
  * A hast plugin for Astro's Markdown processor, Sätteri, which visits elements
  * in document order and puts what a visit returns in the visited node's place.
- * It is typed here by its shape, so the kit takes no dependency on the
- * processor.
+ * It is typed here by its shape over hast's own node types, so the kit takes no
+ * dependency on the processor.
  */
+
+import type { Element } from "hast";
 
 /** The class the shared stylesheet gives the region. */
 export const TABLE_REGION = "lf-table";
@@ -22,20 +24,12 @@ export interface TableOptions {
   readonly label: string;
 }
 
-/** The parts of a hast element the plugin reads and writes. */
-export interface Element {
-  readonly type: "element";
-  readonly tagName: string;
-  readonly properties?: Readonly<Record<string, unknown>>;
-  readonly children: readonly unknown[];
-}
-
 /** The plugin, as Sätteri's `hastPlugins` takes one. */
 export interface TablePlugin {
   readonly name: string;
   readonly element: {
     readonly filter: string[];
-    readonly visit: (node: Element) => Element | undefined;
+    readonly visit: (node: Readonly<Element>) => Element | undefined;
   };
 }
 
@@ -54,8 +48,8 @@ export function scrollableTables(options: TableOptions): () => TablePlugin {
         filter: [...HEADINGS, "table"],
         visit(node) {
           if (node.tagName !== "table") {
-            const id = node.properties?.["id"];
-            if (typeof id === "string" && id !== "") heading = id;
+            const { id } = node.properties;
+            if (id !== undefined && id !== "") heading = id;
             return undefined;
           }
           return {

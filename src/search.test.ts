@@ -14,9 +14,9 @@ import {
 
 const ICON = `<svg aria-hidden="true" class="astro-b5kgnn7o astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21.71 20.29Z"/></svg>`;
 
-const RENDERED = `<button data-open-modal disabled aria-label="Search" aria-keyshortcuts="Control+K" class="astro-b5kgnn7o">${ICON}<span class="sl-hidden md:sl-block astro-b5kgnn7o" aria-hidden="true">Search</span><kbd class="sl-hidden md:sl-flex astro-b5kgnn7o" style="display: none;"><kbd class="astro-b5kgnn7o">Ctrl</kbd><kbd class="astro-b5kgnn7o">K</kbd></kbd></button>`;
+const RENDERED = `<button data-open-modal disabled aria-label="Search" aria-keyshortcuts="Control+K" class="astro-b5kgnn7o">${ICON}<span class="sl-hidden md:sl-block astro-b5kgnn7o" aria-hidden="true">Search</span><kbd class="sl-hidden md:sl-flex astro-b5kgnn7o" style="display: none"><kbd class="astro-b5kgnn7o">Ctrl</kbd><kbd class="astro-b5kgnn7o">K</kbd></kbd></button>`;
 
-const NAMED = `<button data-open-modal disabled aria-keyshortcuts="Control+K" class="astro-b5kgnn7o">${ICON}<span class="${SEARCH_LABEL} astro-b5kgnn7o">Search</span><kbd class="sl-hidden md:sl-flex astro-b5kgnn7o" style="display: none;" aria-hidden="true"><kbd class="astro-b5kgnn7o">Ctrl</kbd><kbd class="astro-b5kgnn7o">K</kbd></kbd></button>`;
+const NAMED = `<button data-open-modal disabled aria-keyshortcuts="Control+K" class="astro-b5kgnn7o">${ICON}<span class="${SEARCH_LABEL} astro-b5kgnn7o">Search</span><kbd class="sl-hidden md:sl-flex astro-b5kgnn7o" style="display: none" aria-hidden="true"><kbd class="astro-b5kgnn7o">Ctrl</kbd><kbd class="astro-b5kgnn7o">K</kbd></kbd></button>`;
 
 const DIALOG = `<dialog style="padding:0" aria-label="Search" class="astro-b5kgnn7o">`;
 
@@ -28,6 +28,12 @@ const page = (button: string): string =>
 describe("namedByItsLabel", () => {
   it("names the button by the word it shows and keeps the shortcut out of the name", () => {
     expect(namedByItsLabel(page(RENDERED))).toBe(page(NAMED));
+  });
+
+  it("names the button where Astro ends the shortcut's style with a semicolon", () => {
+    const style = (written: string): string =>
+      written.replace(`style="display: none"`, `style="display: none;"`);
+    expect(namedByItsLabel(page(style(RENDERED)))).toBe(page(style(NAMED)));
   });
 
   it("leaves a button whose attribute only starts with the same name alone", () => {
@@ -64,7 +70,7 @@ describe("namedByItsLabel", () => {
       "the hidden word",
       RENDERED.replace(` aria-hidden="true">Search`, ">Search"),
     ],
-    ["the shortcut", RENDERED.replace(`style="display: none;"`, "")],
+    ["the shortcut", RENDERED.replace(`style="display: none"`, "")],
   ])("fails where Starlight no longer renders %s this way", (_, button) => {
     expect(() => namedByItsLabel(page(button))).toThrow(
       "read it again before it ships",

@@ -36,8 +36,8 @@ const REWRITES: readonly (readonly [RegExp, string])[] = [
     `<span class="${SEARCH_LABEL}$1">`,
   ],
   [
-    /<kbd class="sl-hidden md:sl-flex((?: [^"]*)?)" style="display: none;">/,
-    `<kbd class="sl-hidden md:sl-flex$1" style="display: none;" aria-hidden="true">`,
+    /<kbd class="sl-hidden md:sl-flex((?: [^"]*)?)" style="(display: none;?)">/,
+    `<kbd class="sl-hidden md:sl-flex$1" style="$2" aria-hidden="true">`,
   ],
 ];
 
