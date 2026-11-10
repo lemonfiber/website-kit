@@ -139,6 +139,9 @@
   "peerDependencies": {
     "astro": ">=7"
   },
+  "dependencies": {
+    "@types/hast": "^3.0.5"
+  },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/node": "^26.6.5",

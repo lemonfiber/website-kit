@@ -10,8 +10,8 @@
  *
  * A hast plugin for Astro's Markdown processor, Sätteri, which visits elements
  * in document order and puts what a visit returns in the visited node's place.
- * It is typed here by its shape, so the kit takes no dependency on the
- * processor.
+ * It is typed here by its shape over hast's own node types, so the kit takes no
+ * dependency on the processor.
  */
 /** The class the shared stylesheet gives the region. */
 export const TABLE_REGION = "lf-table";
@@ -29,8 +29,8 @@ export function scrollableTables(options) {
                 filter: [...HEADINGS, "table"],
                 visit(node) {
                     if (node.tagName !== "table") {
-                        const id = node.properties?.["id"];
-                        if (typeof id === "string" && id !== "")
+                        const { id } = node.properties;
+                        if (id !== undefined && id !== "")
                             heading = id;
                         return undefined;
                     }

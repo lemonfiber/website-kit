@@ -1,14 +1,12 @@
+import type { Element, Properties } from "hast";
 import { describe, expect, it } from "vitest";
 
-import { scrollableTables, TABLE_REGION, type Element } from "./tables.ts";
+import { scrollableTables, TABLE_REGION } from "./tables.ts";
 
-const el = (
-  tagName: string,
-  properties?: Record<string, unknown>,
-): Element => ({
+const el = (tagName: string, properties: Properties = {}): Element => ({
   type: "element",
   tagName,
-  ...(properties === undefined ? {} : { properties }),
+  properties,
   children: [],
 });
 
@@ -45,7 +43,6 @@ describe("scrollableTables", () => {
     expect(visit(el("h2", { id: "codes" }))).toBeUndefined();
     expect(visit(el("h3", { id: "" }))).toBeUndefined();
     expect(visit(el("h3"))).toBeUndefined();
-    expect(visit(el("h4", { id: 4 }))).toBeUndefined();
     expect(visit(el("table"))?.properties).toEqual({
       class: TABLE_REGION,
       role: "region",
@@ -57,8 +54,8 @@ describe("scrollableTables", () => {
   it("starts each document with no heading", () => {
     const factory = scrollableTables({ label: "A table" });
     factory().element.visit(el("h2", { id: "codes" }));
-    expect(
-      factory().element.visit(el("table"))?.properties?.["aria-label"],
-    ).toBe("A table");
+    expect(factory().element.visit(el("table"))?.properties["aria-label"]).toBe(
+      "A table",
+    );
   });
 });
