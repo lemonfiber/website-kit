@@ -32,12 +32,12 @@ const CLOSES = "</button>";
 const REWRITES: readonly (readonly [RegExp, string])[] = [
   [/^(<button[^>]*?) aria-label="[^"]*"/, "$1"],
   [
-    /<span class="sl-hidden md:sl-block((?: [^"]*)?)" aria-hidden="true">/,
-    `<span class="${SEARCH_LABEL}$1">`,
+    /<span class="sl-hidden md:sl-block((?: [^"]*)?)" aria-hidden="true"((?: [^>]*)?)>/,
+    `<span class="${SEARCH_LABEL}$1"$2>`,
   ],
   [
-    /<kbd class="sl-hidden md:sl-flex((?: [^"]*)?)" style="(display: none;?)">/,
-    `<kbd class="sl-hidden md:sl-flex$1" style="$2" aria-hidden="true">`,
+    /<kbd class="sl-hidden md:sl-flex((?: [^"]*)?)" style="(display: none;?)"((?: [^>]*)?)>/,
+    `<kbd class="sl-hidden md:sl-flex$1" style="$2"$3 aria-hidden="true">`,
   ],
 ];
 
