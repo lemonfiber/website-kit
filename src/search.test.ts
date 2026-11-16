@@ -12,11 +12,26 @@ import {
   searchNamedByItsLabel,
 } from "./search.ts";
 
-const ICON = `<svg aria-hidden="true" class="astro-b5kgnn7o astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21.71 20.29Z"/></svg>`;
+const CLASS_ICON = `<svg aria-hidden="true" class="astro-b5kgnn7o astro-hkc32dio" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;"><path d="M21.71 20.29Z"/></svg>`;
 
-const RENDERED = `<button data-open-modal disabled aria-label="Search" aria-keyshortcuts="Control+K" class="astro-b5kgnn7o">${ICON}<span class="sl-hidden md:sl-block astro-b5kgnn7o" aria-hidden="true">Search</span><kbd class="sl-hidden md:sl-flex astro-b5kgnn7o" style="display: none"><kbd class="astro-b5kgnn7o">Ctrl</kbd><kbd class="astro-b5kgnn7o">K</kbd></kbd></button>`;
+const RENDERED = `<button data-open-modal disabled aria-label="Search" aria-keyshortcuts="Control+K" class="astro-b5kgnn7o">${CLASS_ICON}<span class="sl-hidden md:sl-block astro-b5kgnn7o" aria-hidden="true">Search</span><kbd class="sl-hidden md:sl-flex astro-b5kgnn7o" style="display: none"><kbd class="astro-b5kgnn7o">Ctrl</kbd><kbd class="astro-b5kgnn7o">K</kbd></kbd></button>`;
 
-const NAMED = `<button data-open-modal disabled aria-keyshortcuts="Control+K" class="astro-b5kgnn7o">${ICON}<span class="${SEARCH_LABEL} astro-b5kgnn7o">Search</span><kbd class="sl-hidden md:sl-flex astro-b5kgnn7o" style="display: none" aria-hidden="true"><kbd class="astro-b5kgnn7o">Ctrl</kbd><kbd class="astro-b5kgnn7o">K</kbd></kbd></button>`;
+const NAMED = `<button data-open-modal disabled aria-keyshortcuts="Control+K" class="astro-b5kgnn7o">${CLASS_ICON}<span class="${SEARCH_LABEL} astro-b5kgnn7o">Search</span><kbd class="sl-hidden md:sl-flex astro-b5kgnn7o" style="display: none" aria-hidden="true"><kbd class="astro-b5kgnn7o">Ctrl</kbd><kbd class="astro-b5kgnn7o">K</kbd></kbd></button>`;
+
+const ATTRIBUTE_ICON = `<svg data-astro-cid-b5kgnn7o="true" aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="--sl-icon-size: 1em;" data-astro-cid-hkc32dio><path d="M21.71 20.29Z"/></svg>`;
+
+const ATTRIBUTE_RENDERED = `<button data-open-modal disabled aria-label="Search" aria-keyshortcuts="Control+K" data-astro-cid-b5kgnn7o>${ATTRIBUTE_ICON}<span class="sl-hidden md:sl-block" aria-hidden="true" data-astro-cid-b5kgnn7o>Search</span><kbd class="sl-hidden md:sl-flex" style="display: none" data-astro-cid-b5kgnn7o><kbd data-astro-cid-b5kgnn7o>Ctrl</kbd><kbd data-astro-cid-b5kgnn7o>K</kbd></kbd></button>`;
+
+const ATTRIBUTE_NAMED = `<button data-open-modal disabled aria-keyshortcuts="Control+K" data-astro-cid-b5kgnn7o>${ATTRIBUTE_ICON}<span class="${SEARCH_LABEL}" data-astro-cid-b5kgnn7o>Search</span><kbd class="sl-hidden md:sl-flex" style="display: none" data-astro-cid-b5kgnn7o aria-hidden="true"><kbd data-astro-cid-b5kgnn7o>Ctrl</kbd><kbd data-astro-cid-b5kgnn7o>K</kbd></kbd></button>`;
+
+const SCOPES = [
+  { scoped: "a class", rendered: RENDERED, named: NAMED },
+  {
+    scoped: "an attribute",
+    rendered: ATTRIBUTE_RENDERED,
+    named: ATTRIBUTE_NAMED,
+  },
+] as const;
 
 const DIALOG = `<dialog style="padding:0" aria-label="Search" class="astro-b5kgnn7o">`;
 
@@ -25,58 +40,61 @@ const SCRIPT = `<script>const openBtn = document.querySelector('button[data-open
 const page = (button: string): string =>
   `<header>${button}${DIALOG}</header>${SCRIPT}`;
 
-describe("namedByItsLabel", () => {
-  it("names the button by the word it shows and keeps the shortcut out of the name", () => {
-    expect(namedByItsLabel(page(RENDERED))).toBe(page(NAMED));
-  });
+describe.each(SCOPES)(
+  "namedByItsLabel, where Astro scopes styles by $scoped",
+  ({ rendered, named }) => {
+    it("names the button by the word it shows and keeps the shortcut out of the name", () => {
+      expect(namedByItsLabel(page(rendered))).toBe(page(named));
+    });
 
-  it("names the button where Astro ends the shortcut's style with a semicolon", () => {
-    const style = (written: string): string =>
-      written.replace(`style="display: none"`, `style="display: none;"`);
-    expect(namedByItsLabel(page(style(RENDERED)))).toBe(page(style(NAMED)));
-  });
+    it("names the button where Astro ends the shortcut's style with a semicolon", () => {
+      const style = (written: string): string =>
+        written.replace(`style="display: none"`, `style="display: none;"`);
+      expect(namedByItsLabel(page(style(rendered)))).toBe(page(style(named)));
+    });
 
-  it("leaves a button whose attribute only starts with the same name alone", () => {
-    const other = `<button data-open-modal-other>Open</button>`;
-    expect(namedByItsLabel(page(RENDERED) + other)).toBe(page(NAMED) + other);
-  });
+    it("leaves a button whose attribute only starts with the same name alone", () => {
+      const other = `<button data-open-modal-other>Open</button>`;
+      expect(namedByItsLabel(page(rendered) + other)).toBe(page(named) + other);
+    });
 
-  it("fails on a search button that is never closed", () => {
-    expect(() => namedByItsLabel(RENDERED.replace("</button>", ""))).toThrow(
-      "never closed",
-    );
-  });
+    it("fails on a search button that is never closed", () => {
+      expect(() => namedByItsLabel(rendered.replace("</button>", ""))).toThrow(
+        "never closed",
+      );
+    });
 
-  it("reads a page of unclosed openings in time that grows with the page", () => {
-    const hostile = `${"<button data-open-modal\t".repeat(50_000)}</button>`;
-    const started = performance.now();
-    expect(() => namedByItsLabel(hostile)).toThrow();
-    expect(performance.now() - started).toBeLessThan(1000);
-  });
+    it("reads a page of unclosed openings in time that grows with the page", () => {
+      const hostile = `${"<button data-open-modal\t".repeat(50_000)}</button>`;
+      const started = performance.now();
+      expect(() => namedByItsLabel(hostile)).toThrow();
+      expect(performance.now() - started).toBeLessThan(1000);
+    });
 
-  it("leaves a page with no search button as it is", () => {
-    expect(namedByItsLabel(`${DIALOG}${SCRIPT}`)).toBe(`${DIALOG}${SCRIPT}`);
-  });
+    it("leaves a page with no search button as it is", () => {
+      expect(namedByItsLabel(`${DIALOG}${SCRIPT}`)).toBe(`${DIALOG}${SCRIPT}`);
+    });
 
-  it("refuses a button it has named already, which Starlight never renders", () => {
-    expect(() => namedByItsLabel(page(NAMED))).toThrow(
-      "Starlight's search button no longer matches",
-    );
-  });
+    it("refuses a button it has named already, which Starlight never renders", () => {
+      expect(() => namedByItsLabel(page(named))).toThrow(
+        "Starlight's search button no longer matches",
+      );
+    });
 
-  it.each([
-    ["the label", RENDERED.replace(` aria-label="Search"`, "")],
-    [
-      "the hidden word",
-      RENDERED.replace(` aria-hidden="true">Search`, ">Search"),
-    ],
-    ["the shortcut", RENDERED.replace(`style="display: none"`, "")],
-  ])("fails where Starlight no longer renders %s this way", (_, button) => {
-    expect(() => namedByItsLabel(page(button))).toThrow(
-      "read it again before it ships",
-    );
-  });
-});
+    it.each([
+      ["the label", rendered.replace(` aria-label="Search"`, "")],
+      [
+        "the hidden word",
+        rendered.replace(/(md:sl-block[^"]*") aria-hidden="true"/, "$1"),
+      ],
+      ["the shortcut", rendered.replace(`style="display: none"`, "")],
+    ])("fails where Starlight no longer renders %s this way", (_, button) => {
+      expect(() => namedByItsLabel(page(button))).toThrow(
+        "read it again before it ships",
+      );
+    });
+  },
+);
 
 describe("nameSearch and searchNamedByItsLabel", () => {
   let dir = "";
