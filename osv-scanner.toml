@@ -1,0 +1,6 @@
+# Advisories OSV-Scanner passes over here, each with why and until when.
+
+[[IgnoredVulns]]
+id = "GHSA-fc5q-39xc-vjpf"
+ignoreUntil = 2026-12-01T00:00:00Z
+reason = "picomatch is a development dependency only: the build and lint tools match globs from this repository's own configuration with it, so no pattern it matches comes from outside and nothing of it reaches what is shipped. No picomatch release fixes the advisory."
