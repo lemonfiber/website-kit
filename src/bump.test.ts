@@ -64,9 +64,7 @@ const batch = (over: Partial<Batch> = {}): Batch => ({
 
 describe("where the pins' pull request lives", () => {
   it("names a module by the repository it holds", () => {
-    expect(nameOf("vendor/lemonfiber-media-stack")).toBe(
-      "lemonfiber-media-stack",
-    );
+    expect(nameOf("vendor/lemonfiber-plugins")).toBe("lemonfiber-plugins");
   });
 
   it("opens one pull request, from one branch on the prefix", () => {
